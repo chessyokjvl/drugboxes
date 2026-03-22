@@ -1,4 +1,4 @@
-const API_URL = 'ใส่_URL_WEBAPP_ของ_APPSCRIPT_ตรงนี้';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 
 const app = {
     user: null,
