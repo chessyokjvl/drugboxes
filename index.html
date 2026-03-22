@@ -14,11 +14,51 @@
     <div id="page-login" class="page active">
         <div class="auth-card">
             <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" class="auth-logo">
-            <h2 class="auth-title">Medication Stock</h2>
-            <p class="auth-subtitle">ระบบติดตามกล่องและกระเป๋ายา Stock</p>
+            <h2 class="auth-title">Life Saving Stock</h2>
+            <p class="auth-subtitle">ระบบติดตามคลังยา</p>
             <div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div>
             <div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control"></div>
             <button class="btn-primary" onclick="app.login()">เข้าสู่ระบบ</button>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 0.9rem;">
+                <span style="color: var(--primary-green); cursor: pointer; text-decoration: underline;" onclick="app.navigate('page-forgot')">ลืมรหัสผ่าน?</span>
+                <span style="color: var(--primary-green); cursor: pointer; text-decoration: underline;" onclick="app.navigate('page-register')">ลงทะเบียนใหม่</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-register" class="page">
+        <div class="auth-card">
+            <h2 class="auth-title">ลงทะเบียนใหม่</h2>
+            <p class="auth-subtitle">สร้างบัญชีผู้ใช้งานสำหรับเจ้าหน้าที่</p>
+            <div class="form-group"><label>Username</label><input type="text" id="reg-username" class="form-control"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="reg-password" class="form-control"></div>
+            <div class="form-group"><label>E-mail (สำหรับกู้รหัสผ่าน)</label><input type="email" id="reg-email" class="form-control"></div>
+            <div class="form-group">
+                <label>หน่วยงาน/ฝ่าย</label>
+                <select id="reg-dept" class="form-control">
+                    <option value="กลุ่มงานเภสัชกรรม">กลุ่มงานเภสัชกรรม</option>
+                    <option value="หอผู้ป่วยลีลาวดี (หญิง)">หอผู้ป่วยลีลาวดี (หญิง)</option>
+                    <option value="ห้องฉุกเฉิน (ER)">ห้องฉุกเฉิน (ER)</option>
+                    <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="app.register()">สมัครใช้งาน</button>
+            <div style="margin-top: 15px; font-size: 0.9rem;">
+                <span style="color: #666; cursor: pointer;" onclick="app.navigate('page-login')">กลับไปหน้าเข้าสู่ระบบ</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-forgot" class="page">
+        <div class="auth-card">
+            <h2 class="auth-title">ลืมรหัสผ่าน</h2>
+            <p class="auth-subtitle">ระบบจะส่งรหัสผ่านใหม่แบบสุ่มไปที่อีเมลของท่าน</p>
+            <div class="form-group"><label>E-mail ที่ใช้ลงทะเบียน</label><input type="email" id="forgot-email" class="form-control" placeholder="example@mail.com"></div>
+            <button class="btn-primary" onclick="app.forgotPassword()">ส่งรหัสผ่านใหม่</button>
+            <div style="margin-top: 15px; font-size: 0.9rem;">
+                <span style="color: #666; cursor: pointer;" onclick="app.navigate('page-login')">กลับไปหน้าเข้าสู่ระบบ</span>
+            </div>
         </div>
     </div>
 
