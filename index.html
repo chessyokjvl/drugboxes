@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Saving Stock | รพ.จิตเวชเลยราชนครินทร์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #0A7029; /* สีเขียวสาธารณสุข */
+            --light-green: #E8F5E9;
+            --accent-gold: #D4AF37; /* สีทองหรูหรา */
+            --bg-blue: #F0F8FF; /* สีฟ้าอ่อนสบายตา */
+            --white: #FFFFFF;
+            --text-dark: #333333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { background: linear-gradient(135deg, var(--bg-blue) 0%, var(--light-green) 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        /* SPA Container */
+        .page { display: none; width: 100%; max-width: 1200px; padding: 20px; }
+        .page.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Auth Card (Login/Register) */
+        .auth-card {
+            background: var(--white);
+            max-width: 400px;
+            margin: auto;
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--primary-green);
+            text-align: center;
+        }
+
+        .auth-logo { width: 100px; margin-bottom: 20px; }
+        .auth-title { color: var(--primary-green); font-weight: 600; margin-bottom: 5px; }
+        .auth-subtitle { color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-dark); margin-bottom: 8px; font-weight: 500; }
+        .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; transition: all 0.3s; }
+        .form-control:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+
+        .btn-primary {
+            width: 100%; padding: 12px; background: var(--primary-green); color: var(--white);
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-primary:hover { background: #085a21; }
+        
+        .link-text { color: var(--primary-green); font-size: 0.85rem; cursor: pointer; text-decoration: none; }
+        .link-text:hover { color: var(--accent-gold); }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+
+        /* Loading Spinner Overlay */
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loader"><div class="spinner"></div></div>
+
+    <div id="page-login" class="page active">
+        <div class="auth-card">
+            <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" class="auth-logo">
+            <h2 class="auth-title">Life Saving Stock</h2>
+            <p class="auth-subtitle">ระบบติดตามคลังยาฉุกเฉิน</p>
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="login-username" class="form-control" placeholder="กรอกชื่อผู้ใช้งาน">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" class="form-control" placeholder="กรอกรหัสผ่าน">
+            </div>
+            <button class="btn-primary" onclick="login()">เข้าสู่ระบบ</button>
+            
+            <div class="flex-between">
+                <span class="link-text" onclick="navigate('page-forgot')">ลืมรหัสผ่าน?</span>
+                <span class="link-text" onclick="navigate('page-register')">ลงทะเบียนใหม่</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-register" class="page">
+        <div class="auth-card">
+            <h2 class="auth-title">ลงทะเบียน</h2>
+            <p class="auth-subtitle">สร้างบัญชีผู้ใช้งานใหม่</p>
+            <div class="form-group">
+                <label>Username</label><input type="text" id="reg-username" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>E-mail</label><input type="email" id="reg-email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Password</label><input type="password" id="reg-password" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>แผนก/หน่วยงาน</label>
+                <select id="reg-dept" class="form-control">
+                    <option value="Pharmacy">กลุ่มงานเภสัชกรรม (Admin)</option>
+                    <option value="Leelawadee">หอผู้ป่วยลีลาวดี</option>
+                    <option value="ER">ห้องฉุกเฉิน</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="register()">สมัครสมาชิก</button>
+            <div class="flex-between" style="justify-content: center;">
+                <span class="link-text" onclick="navigate('page-login')">กลับไปหน้าเข้าสู่ระบบ</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
+
+        function navigate(pageId) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
+
+        async function callAPI(payload) {
+            showLoader(true);
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                showLoader(false);
+                return result;
+            } catch (error) {
+                showLoader(false);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function login() {
+            const user = document.getElementById('login-username').value;
+            const pass = document.getElementById('login-password').value;
+            if(!user || !pass) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+
+            const res = await callAPI({action: 'login', username: user, password: pass});
+            if(res.status === 'success') {
+                // เก็บข้อมูลลง LocalStorage เพื่อให้หน้าอื่นๆ ดึงไปใช้
+                localStorage.setItem('currentUser', JSON.stringify(res.user));
+                alert('เข้าสู่ระบบสำเร็จ สถานะ: ' + res.user.role);
+                // navigate('page-dashboard'); // เตรียมไว้สำหรับหน้าต่อไป
+            } else {
+                alert(res.message);
+            }
+        }
+
+        async function register() {
+            // โค้ดดึงค่าจาก input คล้ายด้านบน และส่ง payload {action: 'register', ...}
+            // เมื่อสำเร็จให้ alert และ navigate('page-login') กลับมา
+            alert("ฟังก์ชัน Register พร้อมเชื่อมต่อ API (ทำตามโครงสร้าง Login ได้เลยครับ)");
+        }
+    </script>
+</body>
+</html>
