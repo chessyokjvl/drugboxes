@@ -83,6 +83,56 @@ const app = {
         this.navigate('page-login');
     },
 
+// ==========================================
+    // 📝 ระบบลงทะเบียน และ ลืมรหัสผ่าน
+    // ==========================================
+    async register() {
+        const u = document.getElementById('reg-username').value;
+        const p = document.getElementById('reg-password').value;
+        const e = document.getElementById('reg-email').value;
+        const d = document.getElementById('reg-dept').value;
+
+        if (!u || !p || !e) return alert("กรุณากรอก Username, Password และ E-mail ให้ครบถ้วน");
+
+        const payload = {
+            action: 'register',
+            username: u,
+            password: p,
+            email: e,
+            role: 'User', // ค่าเริ่มต้นให้เป็น User ทั่วไป (ปรับแก้ God Admin ได้ใน Sheet ภายหลัง)
+            department: d
+        };
+
+        const res = await this.callAPI(payload);
+        
+        if (res && res.status === 'success') {
+            alert("ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบด้วย Username และ Password ของท่าน");
+            this.navigate('page-login');
+            
+            // ล้างค่าในฟอร์ม
+            document.getElementById('reg-username').value = '';
+            document.getElementById('reg-password').value = '';
+            document.getElementById('reg-email').value = '';
+        } else {
+            alert(res ? res.message : 'เกิดข้อผิดพลาดในการลงทะเบียน');
+        }
+    },
+
+    async forgotPassword() {
+        const e = document.getElementById('forgot-email').value;
+        if (!e) return alert("กรุณากรอก E-mail ของท่าน");
+
+        const res = await this.callAPI({ action: 'reset_password', email: e });
+        
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.navigate('page-login');
+            document.getElementById('forgot-email').value = '';
+        } else {
+            alert(res ? res.message : 'เกิดข้อผิดพลาด: ไม่พบ E-mail นี้ในระบบ');
+        }
+    },
+    
     // ==========================================
     // 📊 ระบบ Dashboard ภาพรวม
     // ==========================================
