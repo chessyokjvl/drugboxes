@@ -51,7 +51,49 @@
             </table>
         </div>
     </div>
+<div id="modal-drug" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="app.closeModal()">&times;</span>
+            <h3 id="modal-title" style="color: var(--primary-green); margin-bottom: 20px;">จัดการรายการยา</h3>
+            
+            <input type="hidden" id="form-item-id">
+            
+            <div class="form-group">
+                <label>ชื่อยา</label>
+                <input type="text" id="form-drug-name" class="form-control" placeholder="เช่น Salbutamol Nebule">
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Lot Number</label>
+                    <input type="text" id="form-lot" class="form-control">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>จำนวน (Qty)</label>
+                    <input type="number" id="form-qty" class="form-control">
+                </div>
+            </div>
 
+            <div class="form-group">
+                <label>วันหมดอายุที่ระบุข้างขวด/แผง</label>
+                <input type="date" id="form-exp" class="form-control">
+            </div>
+
+            <div class="form-group special-condition">
+                <label style="display: flex; align-items: center; cursor: pointer; color: var(--danger); font-weight: 500;">
+                    <input type="checkbox" id="form-is-opened" style="margin-right: 10px; width: 18px; height: 18px;"> 
+                    ⚠️ กรณีพิเศษ: แกะซอง/เปิดใช้แล้ว (ระบบจะปรับวันหมดอายุเป็น 3 เดือนนับจากวันนี้อัตโนมัติ)
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>เภสัชกรผู้ตรวจสอบ</label>
+                <input type="text" id="form-verifier" class="form-control" placeholder="ชื่อเภสัชกรที่ตรวจสอบความถูกต้อง">
+            </div>
+
+            <button class="btn-primary" onclick="app.saveDrug()">บันทึกข้อมูล</button>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>
