@@ -171,6 +171,39 @@ const app = {
                 container.appendChild(card);
             });
         }
+
+        // ---- ส่วนที่เพิ่มใหม่: ดึงข้อมูลประวัติการทำรายการ (Logs) ----
+        const logRes = await this.callAPI({ action: 'get_recent_logs' });
+        
+        if (logRes && logRes.status === 'success') {
+            const tbody = document.getElementById('dashboard-logs-tbody');
+            tbody.innerHTML = '';
+            
+            if (logRes.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">ยังไม่มีประวัติการทำรายการ</td></tr>';
+            } else {
+                logRes.data.forEach(log => {
+                    // กำหนดสี Tag แยกตามประเภทการกระทำ
+                    const actionColor = log.action === 'INSERT' ? 'var(--primary-green)' : '#f39c12';
+                    const actionText = log.action === 'INSERT' ? 'เพิ่มยาใหม่' : 'อัปเดตข้อมูล';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td>
+                            <td>
+                                <span style="background: ${actionColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
+                                    ${actionText}
+                                </span>
+                            </td>
+                            <td>${log.details}</td>
+                            <td><i class="fas fa-user-edit" style="color: #ccc;"></i> ${log.user}</td>
+                            <td style="font-weight: 500;"><i class="fas fa-check-circle" style="color: var(--primary-green);"></i> ${log.verifiedBy}</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+        
     },
 
     // ==========================================
