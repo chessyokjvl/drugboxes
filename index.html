@@ -79,9 +79,18 @@
             <div id="page-dashboard" class="page active">
                 <h2 style="margin-bottom: 20px;">สถิติภาพรวม (Overview)</h2>
                 <div class="stats-grid">
-                    <div class="stat-card"><i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i><div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div></div>
-                    <div class="stat-card"><i class="fas fa-pills stat-icon" style="color: #3498db;"></i><div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div></div>
-                    <div class="stat-card warning"><i class="fas fa-exclamation-triangle stat-icon" style="color: var(--danger);"></i><div class="stat-info"><h4>หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div></div>
+                    <div class="stat-card" onclick="app.navigateMenu('page-wards')" title="ดูหอผู้ป่วยทั้งหมด">
+                        <i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i>
+                        <div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div>
+                    </div>
+                    <div class="stat-card" onclick="app.showFilteredList('all')" title="ดูรายการยาทั้งหมด">
+                        <i class="fas fa-pills stat-icon" style="color: #3498db;"></i>
+                        <div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div>
+                    </div>
+                    <div class="stat-card warning" onclick="app.showFilteredList('expiring')" title="ดูเฉพาะยาใกล้หมดอายุ">
+                        <i class="fas fa-exclamation-triangle stat-icon" style="color: var(--danger);"></i>
+                        <div class="stat-info"><h4>หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
+                    </div>
                 </div>
                 <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการทำรายการล่าสุด</h3>
                 <div class="table-container">
@@ -94,39 +103,21 @@
 
             <div id="page-wards" class="page">
                 <h2 style="margin-bottom: 20px;">จัดการกล่องยา (Wards & Units)</h2>
-                
                 <div style="background: var(--white); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">หน่วยงาน (Department)</label>
-                        <select id="filter-dept" class="form-control" onchange="app.filterWards()">
-                            <option value="all">-- ทุกหน่วยงาน --</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">ประเภทกล่อง (Box Type)</label>
-                        <select id="filter-type" class="form-control" onchange="app.filterWards()">
-                            <option value="all">-- ทุกประเภท --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <button class="btn-outline" style="padding: 10px 15px; border-color: #ccc; color: #666;" onclick="app.resetFilters()">
-                            <i class="fas fa-sync-alt"></i> ล้างตัวกรอง
-                        </button>
-                    </div>
+                    <div style="flex: 1; min-width: 200px;"><label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">หน่วยงาน (Department)</label><select id="filter-dept" class="form-control" onchange="app.filterWards()"><option value="all">-- ทุกหน่วยงาน --</option></select></div>
+                    <div style="flex: 1; min-width: 200px;"><label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">ประเภทกล่อง (Box Type)</label><select id="filter-type" class="form-control" onchange="app.filterWards()"><option value="all">-- ทุกประเภท --</option></select></div>
+                    <div><button class="btn-outline" style="padding: 10px 15px; border-color: #ccc; color: #666;" onclick="app.resetFilters()"><i class="fas fa-sync-alt"></i> ล้างตัวกรอง</button></div>
                 </div>
-
                 <div class="ward-grid" id="ward-grid-container"></div>
             </div>
 
             <div id="page-box-detail" class="page">
                 <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-wards')"><i class="fas fa-arrow-left"></i> กลับไปหน้ากล่องยา</div>
-                
                 <div id="print-header" class="print-only">
                     <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="height:60px;">
                     <h3>รายงานสถานะคลังยา โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
                     <p><b>หน่วยงาน:</b> <span id="print-dept-name"></span> | <b>กล่อง:</b> <span id="print-box-name"></span></p>
                 </div>
-
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 id="detail-title">รายการยา</h2>
                     <div style="display: flex; gap: 10px;">
@@ -140,6 +131,17 @@
                     <table class="data-table">
                         <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>แหล่งเก็บ</th><th>วันหมดอายุ</th><th>จำนวน</th><th class="no-print">จัดการ</th></tr></thead>
                         <tbody id="detail-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-filtered-list" class="page">
+                <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-dashboard')"><i class="fas fa-arrow-left"></i> กลับไปหน้า Dashboard</div>
+                <h2 id="filtered-list-title" style="margin-bottom: 20px;">รายการยา</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>ตึก / กล่อง</th><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>แหล่งเก็บ</th><th class="no-print">จัดการ</th></tr></thead>
+                        <tbody id="filtered-tbody"></tbody>
                     </table>
                 </div>
             </div>
