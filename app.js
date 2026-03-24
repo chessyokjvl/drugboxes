@@ -137,12 +137,22 @@ const app = {
         const p = document.getElementById('reg-password').value;
         const e = document.getElementById('reg-email').value;
         const d = document.getElementById('reg-dept').value;
+        const pdpa = document.getElementById('reg-pdpa').checked; // 📌 ดึงค่าการติ๊ก PDPA
+
         if (!u || !p || !e) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-        const res = await this.callAPI({ action: 'register', username: u, password: p, email: e, role: 'User', department: d });
+        if (!pdpa) return alert("กรุณากดยอมรับเงื่อนไข PDPA ก่อนสมัครใช้งาน"); // 📌 บังคับติ๊ก
+
+        const res = await this.callAPI({ 
+            action: 'register', 
+            username: u, password: p, email: e, role: 'User', department: d,
+            pdpaConsent: 'Accepted' // 📌 ส่งค่าว่ายอมรับแล้วไปให้หลังบ้าน
+        });
+
         if (res && res.status === 'success') {
             alert("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
             this.navigateAuth('page-login');
             ['reg-username', 'reg-password', 'reg-email'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('reg-pdpa').checked = false; // 📌 เคลียร์ช่องติ๊ก
         } else alert(res ? res.message : 'เกิดข้อผิดพลาด');
     },
 
