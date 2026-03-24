@@ -224,6 +224,27 @@ const app = {
             this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType);
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
     }
+    async doStockTake() {
+        // ถามเพื่อความแน่ใจก่อนบันทึก
+        const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
+        if (!confirmTake) return;
+
+        const payload = {
+            action: 'stock_take',
+            boxType: this.currentBoxType,
+            department: this.currentBoxDept,
+            username: this.user.username
+        };
+
+        const res = await this.callAPI(payload);
+        if (res && res.status === 'success') {
+            alert(res.message);
+            // เมื่อยืนยันเสร็จ ให้เด้งกลับไปหน้า Dashboard เพื่อให้เห็นประวัติอัปเดตใหม่ทันที
+            this.loadDashboard();
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
+        }
+    }
 };
 
 window.onload = () => app.init();
