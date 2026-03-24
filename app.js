@@ -1,14 +1,5 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
-
-const DRUG_DICTIONARY = {
-    "Adrenaline 1 mg/ml inj.": { unit: "Ampoule", prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">NSS / D5W</span>`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest\n<b>ขนาดยา (IV/IO):</b> 1 mg every 3-5 minutes`, precautions: `-` },
-    "Amiodarone 150 mg/3ml inj.": { unit: "Ampoule", prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">D5W</span>`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 300 mg bolus\n- Second dose: 150 mg`, precautions: `-` },
-    "Atropine 0.6 mg/ml inj.": { unit: "Ampoule", prep: `-`, admin: `<b>ข้อบ่งใช้:</b> Bradycardia\n<b>ขนาดยา (IV):</b>\n- First dose: 1 mg bolus\n- Repeat every 3-5 minutes\n- <b>Maximum:</b> 3 mg`, precautions: `-` },
-    "Calcium gluconate 4.5 mEq/ml inj. (10ml)": { unit: "Ampoule", prep: `<b>สารละลายที่ใช้ผสมได้:</b> SWI, D5W, D10W, D5S และ NSS\n\n<span style="color:var(--danger); font-weight:600;">⚠️ ยาที่ห้ามผสมร่วมกัน (Incompatibilities):</span>\nNSS, Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin Phosphate, Amphotericin B`, admin: `<b>ข้อบ่งใช้:</b> Cardiac arrest หรือ Cardiotoxicity จาก hyperkalemia\n<b>ขนาดยา:</b> 0.5-1g (5-10 ml) IV push ช้าๆ (2-5 min)\n- อาจให้ซ้ำถ้าอาการรุนแรง (Max: 3g หรือ 30 ml)\n\n<b>ข้อบ่งใช้:</b> Hypocalcaemia\n<b>ขนาดยา:</b> IV 2-15 g/24 hr แบบ continuous infusion หรือแบ่งให้ 4 ครั้ง\n\n<b>การบริหารยา:</b> Direct IV (over 5-10 min) หรือ Infusion (rate 50 mg/ml นานกว่า 1 hr หรือไม่เกิน 120-240 mg/kg/hr หรือ 0.6-1.2 mEq/kg/hr)`, precautions: `• Calcium gluconate 1 g (เท่ากับ 10% calcium gluconate Injection 10 mL) เจือจางในสารน้ำที่เข้ากันได้อย่างน้อย 50 mL\n• ความเข้มข้นสูงสุดสำหรับผู้ป่วยเด็ก คือ ไม่เกิน 50 mg/mL` },
-    "Lidocaine 2% inj. (2ml)": { unit: "Ampoule", prep: `<b>สารละลายที่ใช้ผสมได้:</b> D5W, LRS, NSS, NSS/2, D5S และ D5S/2`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 1-1.5 mg/kg\n- Second dose: 0.5-0.75 mg/kg\n\n<b>การบริหารยา:</b> Loading dose 1-1.5 mg/kg IV slowly push สามารถให้ซ้ำได้อีกครั้งละ 0.5-0.75 mg/kg ทุก 10 นาที (ขนาดยารวมกันไม่เกิน 3 mg/kg) และให้ยาต่อไปด้วยวิธี IV continuous infusion ต่อไปด้วยอัตราเร็ว 1-4 mg/min`, precautions: `-` }
-};
-
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
