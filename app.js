@@ -1,6 +1,45 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
-// ลำดับการแสดงผล Ward ที่ต้องการ (ตัวที่ไม่อยู่ใน List นี้จะถูกต่อท้าย)
+// ลำดับการแสดงผล Ward
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
+
+const DRUG_DICTIONARY = {
+    "Adrenaline 1mg/1ml inj.": {
+        unit: "Ampoule",
+        prep: `<b>กรณี CPR:</b> 10 mg (10 ml) + NSS/D5W up to 100 ml (Concentration 1:10)\n<br><b>ตัวอย่าง:</b> Adrenaline 10 mg (10 ml) + NSS up to 100 ml (1:10) IV rate 5 ml/hr`,
+        admin: `<b>CPR:</b> 0.5-1mg (5-10 ml) IV stat, ให้ซ้ำ 5 ml IV ทุก 5 นาที\n<b>Unstable bradycardia:</b> เริ่มต้น 1.2 ml/hr (ปรับทีละ 5, Max 6 ml/hr)\n<b>Post-cardiac arrest / Refractory shock:</b> เริ่มต้น 5 ml/hr (ปรับทีละ 5, Max 36 ml/hr)`,
+        precautions: `• ขนาดยาเด็ก: 0.01 mg/Kg/dose\n• <b>ข้อควรระวัง:</b> หากเก็บนอกตู้เย็น อายุยาเหลือ 12 เดือนที่อุณหภูมิห้อง`
+    },
+    "Norepinephrine": {
+        unit: "Ampoule",
+        prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)\n<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 5 ml/hr \n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 8 ml/hr\n<b>Max dose:</b> 450 ml/hr`,
+        precautions: `• <b>ข้อควรระวัง:</b> ระวัง smoking - limb ischemia (ภาวะขาดเลือดที่แขนขา)`
+    },
+    "Dopamine": {
+        unit: "Ampoule",
+        prep: `<b>Unstable bradycardia:</b> 100 mg (4 ml) + NSS up to 100 ml (Concentration 1:1)\n<br><b>ตัวอย่าง:</b> Dopamine 100 mg (4 ml) + NSS up to 100 ml (1:1) IV rate 20 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr\n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr\n<b>Max dose:</b> 72 ml/hr`,
+        precautions: `• <b>ข้อควรระวัง:</b> ระวังภาวะ MI และ Tachyarrhythmia`
+    },
+    "Amiodarone 50 mg/ml inj. (3ml)": {
+        unit: "Ampoule",
+        prep: `<b>AF / Stable VT:</b> 150 mg (3 ml) + D5W up to 100 ml\n<b>ตัวอย่างต่อเนื่อง:</b> 900 mg (16 ml) + D5W 500 ml\n<br><b>CPR Box:</b> 150 mg (3 ml) + D5W up to 100 ml (Concentration 15:10)`,
+        admin: `<b>Dose แรก:</b> IV drip in 30 mins (Rate 200 ml/hr)\n<b>Dose ต่อเนื่อง:</b> จากนั้น 900 mg IV drip in 24 hr`,
+        precautions: `• <span style="color:red; font-weight:bold;">ห้ามให้ใน case QT prolonged</span>\n• แนะนำให้เก็บ Thyroid Function Test (TFT) ก่อนให้ยา`
+    },
+    "Lidocaine": {
+        unit: "Vial/Ampoule",
+        prep: `<b>Monomorphic VT:</b> 2% Lidocaine 60 mg (3 ml) หรือ 80 mg (4 ml)\n<b>Maintenance:</b> 400 mg (20 ml) in NSS 100 ml`,
+        admin: `<b>Dose แรก:</b> Slowly push ช้าๆ 5-10 นาที (สามารถ repeat dose ทุก 10-15 นาที)\n<b>Maintenance:</b> 400 mg in NSS 100 ml IV rate 15 ml/hr`,
+        precautions: `• ระวังเรื่องการให้เร็วเกินไป อาจเกิดพิษจาก Lidocaine (Neurotoxicity, Arrhythmia)`
+    },
+    "Magnesium sulfate (MgSO4)": {
+        unit: "Ampoule",
+        prep: `<b>Stable torsade de pointes:</b>\n<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml\n<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
+        admin: `<b>Dose 1:</b> Drip in 15 mins (IV rate 400 ml/hr)\n<b>Dose 2 (then):</b> Drip in 4 hrs (IV rate 25 ml/hr)`,
+        precautions: `• เฝ้าระวังระดับ Magnesium ในเลือด, Deep tendon reflexes (DTR) และอัตราการหายใจ`
+    }
+};
 
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null,
@@ -19,7 +58,6 @@ const app = {
         }
     },
 
-    // ================== UI Navigation ==================
     navigateAuth(pageId) {
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('auth-container').style.display = 'block';
@@ -30,21 +68,16 @@ const app = {
     showMainApp() {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
-        document.getElementById('user-display').innerText = `${this.user.username} (${this.user.role})`;
+        document.getElementById('user-display').innerText = `${this.user.username}`;
     },
 
     navigateMenu(pageId, menuItem = null) {
-        // จัดการ CSS หน้าต่าง
         document.querySelectorAll('main .page').forEach(el => el.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        
-        // จัดการ CSS เมนูแถบซ้าย
         if (menuItem) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             menuItem.classList.add('active');
         }
-        
-        // ปิด Sidebar มือถืออัตโนมัติเมื่อกดเมนู
         if(window.innerWidth <= 768) this.toggleSidebar();
     },
 
@@ -64,66 +97,161 @@ const app = {
             return data;
         } catch (err) {
             this.showLoader(false);
-            alert('การเชื่อมต่อขัดข้อง');
+            alert('การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง');
+            console.error(err);
         }
     },
 
-    // ================== Data Loading ==================
     async loadMasterData() {
         const res = await this.callAPI({ action: 'get_master_data' });
         if (res && res.status === 'success') {
             this.masterData = res;
-            // (ละโค้ดเติม dropdown ปกติไว้ เพื่อความสั้น)
-            const deptSelect = document.getElementById('reg-dept');
-            if (deptSelect) { res.departments.forEach(d => deptSelect.innerHTML += `<option value="${d}">${d}</option>`); }
             
+            const deptSelect = document.getElementById('reg-dept');
+            if (deptSelect) {
+                deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
+                res.departments.forEach(dept => deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`);
+            }
+
             const drugList = document.getElementById('drug-master-list');
-            if (drugList) { res.drugs.forEach(d => drugList.innerHTML += `<option value="${d.name}">`); }
+            if (drugList) {
+                drugList.innerHTML = '';
+                res.drugs.forEach(drug => drugList.innerHTML += `<option value="${drug.name}">`);
+            }
+
+            const drugInput = document.getElementById('form-drug-name');
+            if (drugInput) {
+                drugInput.addEventListener('input', (e) => {
+                    const selectedDrug = res.drugs.find(d => d.name === e.target.value);
+                    const unitDisplay = document.getElementById('form-unit-display');
+                    unitDisplay.innerText = (selectedDrug && selectedDrug.unit) ? `(${selectedDrug.unit})` : '';
+                });
+            }
 
             const searchSelect = document.getElementById('search-drug-info');
             if (searchSelect) {
-                res.drugs.forEach(d => searchSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`);
-                this.tomSelectInstance = new TomSelect("#search-drug-info", { create: false, onChange: (v) => this.showDrugInfo(v) });
+                searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
+                res.drugs.forEach(drug => searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`);
+                
+                if (this.tomSelectInstance) this.tomSelectInstance.destroy();
+                this.tomSelectInstance = new TomSelect("#search-drug-info", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    onChange: (value) => this.showDrugInfo(value)
+                });
             }
         }
     },
 
-    showDrugInfo(drugName) { /* (ใช้โค้ด Dictionary แบบเดิมที่ผมให้ไปรอบก่อนได้เลยครับ) */ },
+    showDrugInfo(drugName) {
+        const displayDiv = document.getElementById('drug-info-display');
+        if (!drugName) { displayDiv.style.display = 'none'; return; }
+        
+        const drugInfo = DRUG_DICTIONARY[drugName];
+        document.getElementById('info-drug-name').innerText = drugName;
+        
+        if (drugInfo) {
+            document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
+            document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-admin').innerHTML = drugInfo.admin || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-precautions').innerHTML = drugInfo.precautions || 'ไม่มีข้อมูล';
+        } else {
+            document.getElementById('info-drug-unit').innerText = '-';
+            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+        }
+        displayDiv.style.display = 'block';
+    },
 
-    // ================== Dashboard & Wards ==================
+    async login() {
+        const u = document.getElementById('login-username').value;
+        const p = document.getElementById('login-password').value;
+        if (!u || !p) return alert("กรุณากรอก Username และ Password");
+        const res = await this.callAPI({ action: 'login', username: u, password: p });
+        if (res && res.status === 'success') {
+            this.user = res.user;
+            localStorage.setItem('rxUser', JSON.stringify(res.user));
+            this.showMainApp();
+            this.loadDashboardData();
+        } else alert(res ? res.message : 'เข้าสู่ระบบล้มเหลว');
+    },
+
+    async register() {
+        const u = document.getElementById('reg-username').value;
+        const p = document.getElementById('reg-password').value;
+        const e = document.getElementById('reg-email').value;
+        const d = document.getElementById('reg-dept').value;
+        if (!u || !p || !e) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        const res = await this.callAPI({ action: 'register', username: u, password: p, email: e, role: 'User', department: d });
+        if (res && res.status === 'success') {
+            alert("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
+            this.navigateAuth('page-login');
+            ['reg-username', 'reg-password', 'reg-email'].forEach(id => document.getElementById(id).value = '');
+        } else alert(res ? res.message : 'เกิดข้อผิดพลาด');
+    },
+
+    async forgotPassword() {
+        const e = document.getElementById('forgot-email').value;
+        if (!e) return alert("กรุณากรอก E-mail");
+        const res = await this.callAPI({ action: 'reset_password', email: e });
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.navigateAuth('page-login');
+            document.getElementById('forgot-email').value = '';
+        } else alert(res ? res.message : 'ไม่พบ E-mail นี้');
+    },
+
+    logout() {
+        localStorage.removeItem('rxUser');
+        this.user = null;
+        ['login-username', 'login-password'].forEach(id => document.getElementById(id).value = '');
+        this.navigateAuth('page-login');
+    },
+
+    // ==========================================
+    // 📊 ฟังก์ชันโหลดหน้า Dashboard & Wards Grid
+    // ==========================================
     async loadDashboardData() {
         const res = await this.callAPI({ action: 'get_dashboard' });
         if (res && res.status === 'success') {
-            let totalBoxes = 0, totalDrugs = 0, exp3m = 0, exp6m = 0;
+            let totalBoxes = 0, totalDrugs = 0, exp3m = 0;
             const container = document.getElementById('ward-grid-container');
             container.innerHTML = '';
 
-            // 1. จัดเรียงข้อมูล (Custom Sorting ตาม Array WARD_ORDER)
+            // 1. เรียงลำดับกล่องตาม WARD_ORDER ที่กำหนดไว้
             const sortedBoxes = res.data.sort((a, b) => {
                 let indexA = WARD_ORDER.indexOf(a.department);
                 let indexB = WARD_ORDER.indexOf(b.department);
-                // ถ้าไม่เจอใน List ให้ไปอยู่ท้ายสุด
                 if(indexA === -1) indexA = 999; 
                 if(indexB === -1) indexB = 999;
                 return indexA - indexB;
             });
 
-            // 2. วาดกล่อง Grid & คำนวณสถิติ
+            // 2. วาดกล่องยาและเช็คสีตามประเภทกล่อง
             sortedBoxes.forEach(box => {
                 totalBoxes++;
                 totalDrugs += box.totalDrugs;
-                exp3m += box.expiringSoon; // สมมติว่าใน API คืนค่ามาเป็น 3m
-                // (ถ้าจะดึง 6 เดือนเป๊ะๆ ต้องแก้ backend หรือโหลด Inventory ทั้งก้อนมานับที่หน้าบ้านครับ)
+                exp3m += box.expiringSoon;
                 
                 const isWarning = box.expiringSoon > 0;
+                
+                // 🎨 กำหนดสีกล่องตามคำศัพท์ใน BoxType
+                let boxColorClass = 'box-ward'; // Default สีเขียว
+                const typeStr = box.boxType.toLowerCase();
+                if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; // สีแดง
+                else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; // สีส้ม
+                else if (typeStr.includes('stock')) boxColorClass = 'box-ward'; // สีเขียว
+
                 const card = document.createElement('div');
-                card.className = `box-card ${isWarning ? 'warning' : ''}`;
+                card.className = `box-card ${boxColorClass} ${isWarning ? 'warning' : ''}`;
                 card.innerHTML = `
                     <div class="box-title">${box.boxName}</div>
-                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">${box.department} (${box.boxType})</div>
+                    <div style="margin-bottom: 8px;"><span class="box-badge">${box.boxType}</span></div>
+                    <div style="color: #666; margin: 10px 0;"><i class="fas fa-clinic-medical"></i> ${box.department}</div>
                     <div style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px;">
                         รายการยา: <b>${box.totalDrugs}</b><br>
-                        ${isWarning ? `<span style="color:var(--danger);">ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green);">สถานะปกติ</span>`}
+                        ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ สถานะปกติ</span>`}
                     </div>
                 `;
                 card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName);
@@ -136,42 +264,136 @@ const app = {
             document.getElementById('stat-exp-3m').innerText = exp3m;
         }
 
-        // โหลดประวัติ Logs
+        // โหลดประวัติ Logs มาแสดงตาราง
         const logRes = await this.callAPI({ action: 'get_recent_logs' });
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
             tbody.innerHTML = '';
-            logRes.data.forEach(log => {
-                tbody.innerHTML += `<tr><td style="font-size:0.85rem;">${log.timestamp}</td><td><span style="background:var(--primary-green); color:white; padding:3px 6px; border-radius:4px; font-size:0.8rem;">${log.action}</span></td><td>${log.details}</td><td>${log.user}</td></tr>`;
-            });
+            if (logRes.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">ยังไม่มีประวัติ</td></tr>';
+            } else {
+                logRes.data.forEach(log => {
+                    const actColor = log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12');
+                    const actText = log.action === 'INSERT' ? 'เพิ่มยาใหม่' : (log.action === 'STOCK_TAKE' ? 'Re-check' : 'อัปเดตข้อมูล');
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td>
+                            <td><span style="background: ${actColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${actText}</span></td>
+                            <td>${log.details}</td>
+                            <td style="font-weight: 500;"><i class="fas fa-user-edit" style="color: #ccc;"></i> ${log.user}</td>
+                        </tr>
+                    `;
+                });
+            }
         }
     },
 
-    // ================== Box Management (เหมือนเดิม) ==================
     async openBoxDetail(boxId, dept, type, boxName) {
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName;
-        document.getElementById('detail-title').innerText = `${boxName} (${dept})`;
-        document.getElementById('print-dept-name').innerText = dept; document.getElementById('print-box-name').innerText = boxName;
+        document.getElementById('detail-title').innerText = `${boxName} (${type})`;
+        document.getElementById('print-dept-name').innerText = dept;
+        document.getElementById('print-box-name').innerText = boxName;
+        document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
         
-        this.navigateMenu('page-box-detail'); // สลับไปหน้าที่ไม่มีในเมนูซ้าย
+        this.navigateMenu('page-box-detail');
+        
+        const btnAdd = document.getElementById('btn-add-drug');
+        btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
+        btnAdd.onclick = () => this.openDrugModal();
+
+        const btnStockTake = document.getElementById('btn-stock-take');
+        btnStockTake.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) ? 'block' : 'none';
 
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
             const tbody = document.getElementById('detail-tbody');
             tbody.innerHTML = '';
+            if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่พบรายการยา</td></tr>';
+
+            const threeMonths = new Date();
+            threeMonths.setDate(new Date().getDate() + 90);
+
             res.data.forEach(item => {
+                const expDate = new Date(item.expireDate);
+                const isExpiring = expDate <= threeMonths;
                 const itemJson = encodeURIComponent(JSON.stringify(item));
-                tbody.innerHTML += `<tr><td>${item.drugName}</td><td>${item.lotNumber}</td><td>${item.storageLoc}</td><td>${item.expireDate}</td><td>${item.qty}</td><td><button class="btn-outline no-print" onclick="app.openDrugModal('${itemJson}')">แก้ไข</button></td></tr>`;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 500;">${item.drugName}</td>
+                        <td>${item.lotNumber}</td>
+                        <td><span style="font-size:0.85rem; color:var(--text-dark); background:#eee; padding:3px 8px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
+                        <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
+                        <td>${item.qty}</td>
+                        <td class="no-print">${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}</td>
+                    </tr>
+                `;
             });
         }
     },
 
-    // (ฟังก์ชัน Auth และ SaveDrug ลากของเดิมมาใส่ได้เลยครับ)
-    async login() { /* โค้ด login เดิม */ },
-    logout() { localStorage.removeItem('rxUser'); this.navigateAuth('page-login'); },
-    openDrugModal() { document.getElementById('modal-drug').style.display = 'flex'; },
+    openDrugModal(itemJsonEncoded = null) {
+        document.getElementById('modal-drug').style.display = 'flex';
+        if (itemJsonEncoded) {
+            document.getElementById('modal-title').innerText = "แก้ไขรายการยา";
+            const item = JSON.parse(decodeURIComponent(itemJsonEncoded));
+            document.getElementById('form-item-id').value = item.itemID;
+            ['drug-name', 'lot', 'qty', 'exp'].forEach(id => {
+                const key = id === 'drug-name' ? 'drugName' : (id === 'lot' ? 'lotNumber' : (id === 'exp' ? 'expireDate' : id));
+                document.getElementById('form-' + id).value = item[key];
+            });
+            document.getElementById('form-storage').value = item.storageLoc || 'ในกล่อง (In Box)';
+            document.getElementById('form-unit-display').innerText = ''; 
+            document.getElementById('form-is-opened').checked = false; 
+            document.getElementById('form-verifier').value = '';
+        } else {
+            document.getElementById('modal-title').innerText = "เพิ่มรายการยาใหม่";
+            ['item-id', 'drug-name', 'lot', 'qty', 'exp', 'verifier'].forEach(id => document.getElementById('form-' + id).value = '');
+            document.getElementById('form-storage').value = 'ในกล่อง (In Box)';
+            document.getElementById('form-unit-display').innerText = '';
+            document.getElementById('form-is-opened').checked = false;
+        }
+    },
+
     closeModal() { document.getElementById('modal-drug').style.display = 'none'; },
-    async saveDrug() { /* โค้ด saveDrug เดิม */ }
+
+    async saveDrug() {
+        const payload = {
+            action: 'save_drug',
+            itemID: document.getElementById('form-item-id').value,
+            boxId: this.currentBoxId, boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept,
+            drugName: document.getElementById('form-drug-name').value,
+            lotNumber: document.getElementById('form-lot').value,
+            qty: document.getElementById('form-qty').value,
+            storageLoc: document.getElementById('form-storage').value,
+            expireDate: document.getElementById('form-exp').value,
+            isOpened: document.getElementById('form-is-opened').checked,
+            status: 'Active', username: this.user.username,
+            verifiedBy: document.getElementById('form-verifier').value
+        };
+
+        if (!payload.drugName || (!payload.expireDate && !payload.isOpened) || !payload.verifiedBy) {
+            return alert("กรุณากรอก ชื่อยา, วันหมดอายุ และ ชื่อเภสัชกร");
+        }
+
+        const res = await this.callAPI(payload);
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.closeModal();
+            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName);
+        } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
+    },
+
+    async doStockTake() {
+        const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
+        if (!confirmTake) return;
+        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept, username: this.user.username });
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.loadDashboardData();
+            this.navigateMenu('page-wards'); // เด้งกลับไปหน้ากล่องยา
+        } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
+    }
 };
 
 window.onload = () => app.init();
