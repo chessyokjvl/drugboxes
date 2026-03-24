@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -19,7 +20,7 @@
                 <div class="auth-card">
                     <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="width: 80px; margin-bottom: 15px;">
                     <h2 style="color: var(--primary-green); margin-bottom: 5px;">JVL Drug Boxes</h2>
-                    <p style="color: #666; margin-bottom: 20px;">ระบบบริหารจัดการยาสต็อกวอร์ด</p>
+                    <p style="color: #666; margin-bottom: 20px;">ระบบติดตามยาสต็อกวอร์ด</p>
                     <div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div>
                     <div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control" onkeypress="if(event.key === 'Enter') app.login()"></div>
                     <button class="btn-primary" onclick="app.login()">เข้าสู่ระบบ</button>
@@ -45,7 +46,6 @@
                             ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล เพื่อวัตถุประสงค์ในการใช้งานระบบ JVL Drug Boxes ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                         </label>
                     </div>
-
                     <button class="btn-primary" onclick="app.register()">สมัครใช้งาน</button>
                     <div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div>
                 </div>
@@ -70,9 +70,10 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo"><h3>JVL Drug Boxes</h3></div>
             <ul class="nav-menu">
-                <li class="nav-item active" onclick="app.navigateMenu('page-dashboard', this)"><i class="fas fa-chart-pie"></i> สถิติภาพรวม</li>
+                <li class="nav-item active" onclick="app.navigateMenu('page-dashboard', this)"><i class="fas fa-home"></i> หน้าหลัก</li>
                 <li class="nav-item" onclick="app.navigateMenu('page-wards', this)"><i class="fas fa-clinic-medical"></i> กล่องยาหอผู้ป่วย</li>
                 <li class="nav-item" onclick="app.navigateMenu('page-drug-info', this)"><i class="fas fa-book-medical"></i> คู่มือบริหารยา</li>
+                <li class="nav-item" onclick="app.openAnalytics(this)"><i class="fas fa-chart-line"></i> รายงานวิเคราะห์</li>
                 <li class="nav-item" style="margin-top: 20px; color: #ffcccc;" onclick="app.logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
             </ul>
         </aside>
@@ -143,13 +144,34 @@
             </div>
 
             <div id="page-filtered-list" class="page">
-                <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-dashboard')"><i class="fas fa-arrow-left"></i> กลับไปหน้า Dashboard</div>
+                <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-dashboard')"><i class="fas fa-arrow-left"></i> กลับไปหน้าแรก</div>
                 <h2 id="filtered-list-title" style="margin-bottom: 20px;">รายการยา</h2>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>ตึก / กล่อง</th><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>แหล่งเก็บ</th><th class="no-print">จัดการ</th></tr></thead>
                         <tbody id="filtered-tbody"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <div id="page-analytics" class="page">
+                <h2 style="margin-bottom: 20px;"><i class="fas fa-chart-line" style="color: var(--primary-green);"></i> รายงานวิเคราะห์คลังยา (Analytics)</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center;">
+                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">สัดส่วนความเสี่ยงยาหมดอายุ</h4>
+                        <div style="position: relative; height: 250px; width: 100%;"><canvas id="chart-status"></canvas></div>
+                    </div>
+                    
+                    <div style="background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">จำนวนยาใกล้หมดอายุ (< 3 เดือน) แยกตามหอผู้ป่วย</h4>
+                        <div style="position: relative; height: 250px; width: 100%;"><canvas id="chart-ward-exp"></canvas></div>
+                    </div>
+                </div>
+
+                <div style="background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <h4 style="color: var(--text-dark); margin-bottom: 15px;">Top 5 รายการยาที่มีจำนวนมากที่สุดในระบบ</h4>
+                    <div style="position: relative; height: 300px; width: 100%;"><canvas id="chart-top-drugs"></canvas></div>
                 </div>
             </div>
 
@@ -184,7 +206,6 @@
                 <div class="form-group" style="flex:1; min-width: 120px;"><label>แหล่งเก็บ</label><select id="form-storage" class="form-control"><option value="ในกล่อง (In Box)">ในกล่อง (In Box)</option><option value="ชั้นเก็บยา (On Shelf)">ชั้นเก็บยา (On Shelf)</option><option value="ตู้เย็น (Refrigerator)">ตู้เย็น (Refrigerator)</option></select></div>
             </div>
             <div class="form-group"><label>วันหมดอายุที่ระบุข้างขวด/แผง</label><input type="date" id="form-exp" class="form-control"></div>
-            <div class="form-group special-condition"><label style="display: flex; align-items: center; color: var(--danger); font-weight: 500; cursor: pointer; margin-bottom: 0;"><input type="checkbox" id="form-is-opened" style="margin-right: 10px; width: 18px; height: 18px;"> ⚠️ กรณีพิเศษ: แกะซอง/เปิดใช้แล้ว (อายุยา 3 เดือน)</label></div>
             <div class="form-group"><label>เภสัชกรผู้ตรวจสอบ</label><input type="text" id="form-verifier" class="form-control"></div>
             <button class="btn-primary" onclick="app.saveDrug()">บันทึกข้อมูล</button>
         </div>
