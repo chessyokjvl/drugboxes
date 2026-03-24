@@ -32,12 +32,14 @@ body { background: var(--bg-blue); color: var(--text-dark); }
 /* Buttons & Links */
 .btn-primary { background: var(--primary-green); color: var(--white); border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 500; transition: 0.3s; }
 .btn-primary:hover { background: #085a21; }
-.btn-outline { background: transparent; border: 1px solid var(--white); color: var(--white); padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+.btn-outline { background: transparent; border: 1px solid var(--white); color: var(--white); padding: 5px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s;}
+.btn-outline:hover { background: var(--white); color: var(--primary-green); }
 .link-text { color: var(--primary-green); cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
 .link-text:hover { color: var(--accent-gold); }
 
 /* Layout Components */
 .navbar { background: var(--primary-green); color: var(--white); padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.nav-brand { font-weight: 500; font-size: 1.2rem; }
 .nav-brand img { height: 30px; vertical-align: middle; margin-right: 10px; }
 .header-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 
@@ -74,27 +76,19 @@ body { background: var(--bg-blue); color: var(--text-dark); }
 .print-only { display: none; }
 
 @media print {
-    /* ปรับพื้นหลังให้เป็นสีขาว และซ่อนส่วนที่ไม่จำเป็น */
     body { background: var(--white); color: #000; }
     .no-print, .navbar, .btn-primary, .btn-outline, .close-btn, #loader { display: none !important; }
     
-    /* แสดงส่วนหัวกระดาษแบบเป็นทางการ */
     .print-only { display: block; text-align: center; margin-bottom: 20px; }
     .print-only img { height: 60px; margin-bottom: 10px; }
     .print-only h3 { font-size: 16pt; margin-bottom: 5px; color: #000; }
     .print-only p { font-size: 12pt; color: #333; }
 
-    /* ปรับแต่งหน้า Page ให้เต็มแผ่น */
     .page { padding: 0; margin: 0; max-width: 100%; display: block !important; }
-    
-    /* ปรับตารางให้เหมาะกับการพิมพ์ลง A4 */
     .table-container { box-shadow: none; border-radius: 0; overflow: visible; }
     .data-table { border-collapse: collapse; width: 100%; }
     .data-table th, .data-table td { border: 1px solid #999; padding: 10px; font-size: 12pt; color: #000; }
-    
-    /* บังคับให้สีพื้นหลังตารางแสดงผลตอนพิมพ์ */
     .data-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
     
-    /* ตั้งค่าหน้ากระดาษเป็น A4 แนวตั้ง */
     @page { size: A4 portrait; margin: 1.5cm; }
 }
