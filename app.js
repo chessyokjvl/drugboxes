@@ -2,70 +2,47 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgu
 // ==========================================
 // 📚 ฐานข้อมูลคู่มือยา (Local Drug Dictionary)
 // ==========================================
-// คุณสามารถมาเพิ่ม/แก้ไข ข้อมูลยาตรงนี้ได้เลยโดยใช้ HTML จัดรูปแบบให้สวยงาม
 const DRUG_DICTIONARY = {
     "Adrenaline 1mg/1ml inj.": {
         unit: "Ampoule",
-        prep: `<b>กรณี CPR:</b> 10 mg (10 ml) + NSS/D5W up to 100 ml (Concentration 1:10)
-<br><b>ตัวอย่าง:</b> Adrenaline 10 mg (10 ml) + NSS up to 100 ml (1:10) IV rate 5 ml/hr`,
-        admin: `<b>CPR:</b> 0.5-1mg (5-10 ml) IV stat, ให้ซ้ำ 5 ml IV ทุก 5 นาที
-<b>Unstable bradycardia:</b> เริ่มต้น 1.2 ml/hr (ปรับทีละ 5, Max 6 ml/hr)
-<b>Post-cardiac arrest / Refractory shock:</b> เริ่มต้น 5 ml/hr (ปรับทีละ 5, Max 36 ml/hr)`,
-        precautions: `• ขนาดยาเด็ก: 0.01 mg/Kg/dose
-• <b>ข้อควรระวัง:</b> หากเก็บนอกตู้เย็น อายุยาเหลือ 12 เดือนที่อุณหภูมิห้อง`
+        prep: `<b>กรณี CPR:</b> 10 mg (10 ml) + NSS/D5W up to 100 ml (Concentration 1:10)\n<br><b>ตัวอย่าง:</b> Adrenaline 10 mg (10 ml) + NSS up to 100 ml (1:10) IV rate 5 ml/hr`,
+        admin: `<b>CPR:</b> 0.5-1mg (5-10 ml) IV stat, ให้ซ้ำ 5 ml IV ทุก 5 นาที\n<b>Unstable bradycardia:</b> เริ่มต้น 1.2 ml/hr (ปรับทีละ 5, Max 6 ml/hr)\n<b>Post-cardiac arrest / Refractory shock:</b> เริ่มต้น 5 ml/hr (ปรับทีละ 5, Max 36 ml/hr)`,
+        precautions: `• ขนาดยาเด็ก: 0.01 mg/Kg/dose\n• <b>ข้อควรระวัง:</b> หากเก็บนอกตู้เย็น อายุยาเหลือ 12 เดือนที่อุณหภูมิห้อง`
     },
     "Norepinephrine": {
         unit: "Ampoule",
-        prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)
-<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
-        admin: `<b>IV rate:</b> เริ่มต้น 5 ml/hr 
-<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 8 ml/hr
-<b>Max dose:</b> 450 ml/hr`,
+        prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)\n<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 5 ml/hr \n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 8 ml/hr\n<b>Max dose:</b> 450 ml/hr`,
         precautions: `• <b>ข้อควรระวัง:</b> ระวัง smoking - limb ischemia (ภาวะขาดเลือดที่แขนขา)`
     },
     "Dopamine": {
         unit: "Ampoule",
-        prep: `<b>Unstable bradycardia:</b> 100 mg (4 ml) + NSS up to 100 ml (Concentration 1:1)
-<br><b>ตัวอย่าง:</b> Dopamine 100 mg (4 ml) + NSS up to 100 ml (1:1) IV rate 20 ml/hr`,
-        admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr
-<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr
-<b>Max dose:</b> 72 ml/hr`,
+        prep: `<b>Unstable bradycardia:</b> 100 mg (4 ml) + NSS up to 100 ml (Concentration 1:1)\n<br><b>ตัวอย่าง:</b> Dopamine 100 mg (4 ml) + NSS up to 100 ml (1:1) IV rate 20 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr\n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr\n<b>Max dose:</b> 72 ml/hr`,
         precautions: `• <b>ข้อควรระวัง:</b> ระวังภาวะ MI และ Tachyarrhythmia`
     },
     "Amiodarone 50 mg/ml inj. (3ml)": {
         unit: "Ampoule",
-        prep: `<b>AF / Stable VT:</b> 150 mg (3 ml) + D5W up to 100 ml
-<b>ตัวอย่างต่อเนื่อง:</b> 900 mg (16 ml) + D5W 500 ml
-<br><b>CPR Box:</b> 150 mg (3 ml) + D5W up to 100 ml (Concentration 15:10)`,
-        admin: `<b>Dose แรก:</b> IV drip in 30 mins (Rate 200 ml/hr)
-<b>Dose ต่อเนื่อง:</b> จากนั้น 900 mg IV drip in 24 hr`,
-        precautions: `• <span style="color:red; font-weight:bold;">ห้ามให้ใน case QT prolonged</span>
-• แนะนำให้เก็บ Thyroid Function Test (TFT) ก่อนให้ยา`
+        prep: `<b>AF / Stable VT:</b> 150 mg (3 ml) + D5W up to 100 ml\n<b>ตัวอย่างต่อเนื่อง:</b> 900 mg (16 ml) + D5W 500 ml\n<br><b>CPR Box:</b> 150 mg (3 ml) + D5W up to 100 ml (Concentration 15:10)`,
+        admin: `<b>Dose แรก:</b> IV drip in 30 mins (Rate 200 ml/hr)\n<b>Dose ต่อเนื่อง:</b> จากนั้น 900 mg IV drip in 24 hr`,
+        precautions: `• <span style="color:red; font-weight:bold;">ห้ามให้ใน case QT prolonged</span>\n• แนะนำให้เก็บ Thyroid Function Test (TFT) ก่อนให้ยา`
     },
     "Lidocaine": {
         unit: "Vial/Ampoule",
-        prep: `<b>Monomorphic VT:</b> 2% Lidocaine 60 mg (3 ml) หรือ 80 mg (4 ml)
-<b>Maintenance:</b> 400 mg (20 ml) in NSS 100 ml`,
-        admin: `<b>Dose แรก:</b> Slowly push ช้าๆ 5-10 นาที (สามารถ repeat dose ทุก 10-15 นาที)
-<b>Maintenance:</b> 400 mg in NSS 100 ml IV rate 15 ml/hr`,
+        prep: `<b>Monomorphic VT:</b> 2% Lidocaine 60 mg (3 ml) หรือ 80 mg (4 ml)\n<b>Maintenance:</b> 400 mg (20 ml) in NSS 100 ml`,
+        admin: `<b>Dose แรก:</b> Slowly push ช้าๆ 5-10 นาที (สามารถ repeat dose ทุก 10-15 นาที)\n<b>Maintenance:</b> 400 mg in NSS 100 ml IV rate 15 ml/hr`,
         precautions: `• ระวังเรื่องการให้เร็วเกินไป อาจเกิดพิษจาก Lidocaine (Neurotoxicity, Arrhythmia)`
     },
     "Magnesium sulfate (MgSO4)": {
         unit: "Ampoule",
-        prep: `<b>Stable torsade de pointes:</b>
-<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml
-<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
-        admin: `<b>Dose 1:</b> Drip in 15 mins (IV rate 400 ml/hr)
-<b>Dose 2 (then):</b> Drip in 4 hrs (IV rate 25 ml/hr)`,
+        prep: `<b>Stable torsade de pointes:</b>\n<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml\n<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
+        admin: `<b>Dose 1:</b> Drip in 15 mins (IV rate 400 ml/hr)\n<b>Dose 2 (then):</b> Drip in 4 hrs (IV rate 25 ml/hr)`,
         precautions: `• เฝ้าระวังระดับ Magnesium ในเลือด, Deep tendon reflexes (DTR) และอัตราการหายใจ`
     }
 };
 
-// ==========================================
-// 🚀 เริ่มการทำงานของระบบ (Main Application)
-// ==========================================
 const app = {
-    user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null,
+    user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, // เพิ่ม currentBoxName
     masterData: { departments: [], drugs: [] },
     tomSelectInstance: null,
 
@@ -106,25 +83,18 @@ const app = {
         if (res && res.status === 'success') {
             this.masterData = res;
             
-            // 1. Setup Dropdown แผนก
             const deptSelect = document.getElementById('reg-dept');
             if (deptSelect) {
                 deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
-                res.departments.forEach(dept => {
-                    deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`;
-                });
+                res.departments.forEach(dept => deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`);
             }
 
-            // 2. Setup Autocomplete รายชื่อยา (Modal)
             const drugList = document.getElementById('drug-master-list');
             if (drugList) {
                 drugList.innerHTML = '';
-                res.drugs.forEach(drug => {
-                    drugList.innerHTML += `<option value="${drug.name}">`;
-                });
+                res.drugs.forEach(drug => drugList.innerHTML += `<option value="${drug.name}">`);
             }
 
-            // 3. ระบบดึงหน่วยนับอัตโนมัติ (Modal)
             const drugInput = document.getElementById('form-drug-name');
             if (drugInput) {
                 drugInput.addEventListener('input', (e) => {
@@ -134,14 +104,10 @@ const app = {
                 });
             }
 
-            // 4. ระบบ Tom Select (หน้าคู่มือยา)
             const searchSelect = document.getElementById('search-drug-info');
             if (searchSelect) {
                 searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
-                // ดึงรายชื่อยามาใส่ในช่องค้นหา (ดึงจากทั้ง Sheet และ Local Dictionary เผื่อไว้)
-                res.drugs.forEach(drug => {
-                    searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`;
-                });
+                res.drugs.forEach(drug => searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`);
                 
                 if (this.tomSelectInstance) this.tomSelectInstance.destroy();
                 this.tomSelectInstance = new TomSelect("#search-drug-info", {
@@ -153,16 +119,11 @@ const app = {
         }
     },
 
-    // ==========================================
-    // 📖 ฟังก์ชันแสดงข้อมูลคู่มือยา
-    // ==========================================
     showDrugInfo(drugName) {
         const displayDiv = document.getElementById('drug-info-display');
         if (!drugName) { displayDiv.style.display = 'none'; return; }
         
-        // ค้นหาข้อมูลจาก Local Dictionary ก่อน ถ้าไม่มีค่อยแสดงค่า Default
         const drugInfo = DRUG_DICTIONARY[drugName];
-        
         document.getElementById('info-drug-name').innerText = drugName;
         
         if (drugInfo) {
@@ -176,7 +137,6 @@ const app = {
             document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
             document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
         }
-        
         displayDiv.style.display = 'block';
     },
 
@@ -239,14 +199,15 @@ const app = {
                 const card = document.createElement('div');
                 card.className = `box-card ${isWarning ? 'warning' : ''}`;
                 card.innerHTML = `
-                    <div class="box-title">${box.boxType}</div>
+                    <div class="box-title" style="font-size: 1.4rem;">${box.boxName}</div>
+                    <div style="color: #666; margin-bottom: 5px; font-size: 0.85rem;"><span style="background:var(--light-green); color:var(--primary-green); padding:2px 6px; border-radius:4px;">${box.boxType}</span></div>
                     <div style="color: #666; margin: 10px 0;"><i class="fas fa-hospital"></i> ${box.department}</div>
                     <div style="font-size: 0.9rem; padding-top: 10px; border-top: 1px solid #eee;">
                         <span>รายการทั้งหมด: <b>${box.totalDrugs}</b></span><br>
                         ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon} รายการ</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ สถานะปกติ</span>`}
                     </div>
                 `;
-                card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType);
+                card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName);
                 container.appendChild(card);
             });
         }
@@ -275,11 +236,11 @@ const app = {
         }
     },
 
-    async openBoxDetail(boxId, dept, type) {
-        this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type;
-        document.getElementById('detail-title').innerText = `${type} - ${dept}`;
+    async openBoxDetail(boxId, dept, type, boxName) {
+        this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName;
+        document.getElementById('detail-title').innerText = `${boxName} (${type})`;
         document.getElementById('print-dept-name').innerText = dept;
-        document.getElementById('print-box-name').innerText = type;
+        document.getElementById('print-box-name').innerText = boxName;
         document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
         
         this.navigate('page-box-detail');
@@ -349,7 +310,7 @@ const app = {
         const payload = {
             action: 'save_drug',
             itemID: document.getElementById('form-item-id').value,
-            boxId: this.currentBoxId, boxType: this.currentBoxType, department: this.currentBoxDept,
+            boxId: this.currentBoxId, boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept,
             drugName: document.getElementById('form-drug-name').value,
             lotNumber: document.getElementById('form-lot').value,
             qty: document.getElementById('form-qty').value,
@@ -368,14 +329,14 @@ const app = {
         if (res && res.status === 'success') {
             alert(res.message);
             this.closeModal();
-            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType);
+            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName);
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
     },
 
     async doStockTake() {
         const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
         if (!confirmTake) return;
-        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, department: this.currentBoxDept, username: this.user.username });
+        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept, username: this.user.username });
         if (res && res.status === 'success') {
             alert(res.message);
             this.loadDashboard();
