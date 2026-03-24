@@ -39,6 +39,13 @@
                     <div class="form-group"><label>Password</label><input type="password" id="reg-password" class="form-control"></div>
                     <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" class="form-control"></div>
                     <div class="form-group"><label>หน่วยงาน</label><select id="reg-dept" class="form-control"></select></div>
+                    <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 0.85rem; color: #666; line-height: 1.4;">
+                            <input type="checkbox" id="reg-pdpa" style="margin-right: 10px; margin-top: 3px; width: 18px; height: 18px;">
+                            ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล เพื่อวัตถุประสงค์ในการใช้งานระบบ JVL Drug Boxes ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                        </label>
+                    </div>
+
                     <button class="btn-primary" onclick="app.register()">สมัครใช้งาน</button>
                     <div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div>
                 </div>
