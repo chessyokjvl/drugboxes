@@ -54,12 +54,8 @@
 
     <div id="app-container" class="app-container" style="display: none;">
         <div class="sidebar-overlay" onclick="app.toggleSidebar()"></div>
-        
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo">
-                <h3>JVL Drug Boxes</h3>
-            </div>
+            <div class="sidebar-header"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo"><h3>JVL Drug Boxes</h3></div>
             <ul class="nav-menu">
                 <li class="nav-item active" onclick="app.navigateMenu('page-dashboard', this)"><i class="fas fa-chart-pie"></i> สถิติภาพรวม</li>
                 <li class="nav-item" onclick="app.navigateMenu('page-wards', this)"><i class="fas fa-clinic-medical"></i> กล่องยาหอผู้ป่วย</li>
@@ -77,20 +73,11 @@
             <div id="page-dashboard" class="page active">
                 <h2 style="margin-bottom: 20px;">สถิติภาพรวม (Overview)</h2>
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i>
-                        <div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-pills stat-icon" style="color: #3498db;"></i>
-                        <div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div>
-                    </div>
-                    <div class="stat-card warning">
-                        <i class="fas fa-exclamation-triangle stat-icon" style="color: var(--danger);"></i>
-                        <div class="stat-info"><h4>หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
-                    </div>
+                    <div class="stat-card"><i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i><div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div></div>
+                    <div class="stat-card"><i class="fas fa-pills stat-icon" style="color: #3498db;"></i><div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div></div>
+                    <div class="stat-card warning"><i class="fas fa-exclamation-triangle stat-icon" style="color: var(--danger);"></i><div class="stat-info"><h4>หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div></div>
                 </div>
-                <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการอัปเดตสต็อกล่าสุด</h3>
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการทำรายการล่าสุด</h3>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>วัน-เวลา</th><th>ประเภท</th><th>รายละเอียด</th><th>ผู้ดำเนินการ</th></tr></thead>
@@ -117,7 +104,10 @@
                     <h2 id="detail-title">รายการยา</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-                        <button class="btn-primary no-print" id="btn-stock-take" style="background: #27ae60; width: auto;" onclick="app.doStockTake()"><i class="fas fa-check-double"></i> Stock Take</button>
+                        
+                        <button class="btn-primary no-print" id="btn-send-pharma" style="background: #e74c3c; width: auto; display: none;" onclick="app.updateBoxStatus('ส่งปรับแก้')"><i class="fas fa-exclamation-circle"></i> ส่งให้เภสัชฯ ปรับแก้</button>
+                        <button class="btn-primary no-print" id="btn-clear-status" style="background: #27ae60; width: auto; display: none;" onclick="app.updateBoxStatus('ปกติ')"><i class="fas fa-check-circle"></i> ปรับแก้เรียบร้อย (Clear)</button>
+                        
                         <button class="btn-primary no-print" id="btn-add-drug" style="width: auto;" onclick="app.openDrugModal()"><i class="fas fa-plus"></i> เพิ่มยา</button>
                     </div>
                 </div>
