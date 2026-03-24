@@ -1,33 +1,58 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
+
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
     tomSelectInstance: null,
-    apiActiveCount: 0, // ตัวนับจำนวน API ที่กำลังโหลด
+    apiActiveCount: 0,
 
     async init() {
-        // 🚀 โหลด Master Data ทิ้งไว้เบื้องหลัง (ไม่ต้องใส่ await เพื่อไม่ให้บล็อกหน้าเว็บ)
-        this.loadMasterData();
-
+        this.loadMasterData(); // โหลดข้อมูลเบื้องหลัง
         const userStr = localStorage.getItem('rxUser');
         if (userStr) {
             this.user = JSON.parse(userStr);
             this.showMainApp();
-            // รอแค่ข้อมูล Dashboard ก็พอ
             await this.loadDashboardData();
         } else {
             this.navigateAuth('page-login');
         }
     },
 
-    // ... (ฟังก์ชัน navigateAuth, showMainApp, navigateMenu, toggleSidebar เหมือนเดิม) ...
+    // ================== ฟังก์ชันสลับหน้า Auth ==================
+    navigateAuth(pageId) {
+        document.getElementById('app-container').style.display = 'none';
+        document.getElementById('auth-container').style.display = 'block';
+        document.querySelectorAll('#auth-container .page').forEach(el => el.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    },
+
+    showMainApp() {
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        document.getElementById('user-display').innerText = `${this.user.username} (${this.user.dept})`;
+    },
+
+    navigateMenu(pageId, menuItem = null) {
+        document.querySelectorAll('main .page').forEach(el => el.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (menuItem) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            menuItem.classList.add('active');
+        }
+        if(window.innerWidth <= 768) this.toggleSidebar();
+    },
+
+    toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.querySelector('.sidebar-overlay').classList.toggle('active');
+    },
 
     showLoader(show) { 
         document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
     },
 
-    // 🚀 ปรับปรุงระบบ API ให้รองรับการยิงหลายเส้นพร้อมกันโดยที่ตัวหมุนไม่กระพริบ
+    // ================== ฟังก์ชันยิง API ==================
     async callAPI(payload) {
         this.apiActiveCount++;
         this.showLoader(true);
@@ -44,17 +69,119 @@ const app = {
         }
     },
 
-    // ... (ฟังก์ชัน loadMasterData, showDrugInfo, login, register, forgotPassword, logout เหมือนเดิม) ...
+    // ================== ระบบจัดการข้อมูล ==================
+    async loadMasterData() {
+        const res = await this.callAPI({ action: 'get_master_data' });
+        if (res && res.status === 'success') {
+            this.masterData = res;
+            
+            const deptSelect = document.getElementById('reg-dept');
+            if (deptSelect) {
+                deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
+                res.departments.forEach(dept => deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`);
+            }
 
-    // 🚀 ปรับให้โหลดกล่องยา และ ประวัติ Logs ทำงาน "พร้อมกัน"
+            const drugList = document.getElementById('drug-master-list');
+            if (drugList) {
+                drugList.innerHTML = '';
+                res.drugs.forEach(drug => drugList.innerHTML += `<option value="${drug.name}">`);
+            }
+
+            const drugInput = document.getElementById('form-drug-name');
+            if (drugInput) {
+                drugInput.addEventListener('input', (e) => {
+                    const selectedDrug = res.drugs.find(d => d.name === e.target.value);
+                    const unitDisplay = document.getElementById('form-unit-display');
+                    unitDisplay.innerText = (selectedDrug && selectedDrug.unit) ? `(${selectedDrug.unit})` : '';
+                });
+            }
+
+            const searchSelect = document.getElementById('search-drug-info');
+            if (searchSelect) {
+                searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
+                res.drugs.forEach(drug => searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`);
+                if (this.tomSelectInstance) this.tomSelectInstance.destroy();
+                this.tomSelectInstance = new TomSelect("#search-drug-info", { create: false, sortField: { field: "text", direction: "asc" }, onChange: (value) => this.showDrugInfo(value) });
+            }
+        }
+    },
+
+    showDrugInfo(drugName) {
+        const displayDiv = document.getElementById('drug-info-display');
+        if (!drugName) { displayDiv.style.display = 'none'; return; }
+        
+        // ดึงจากตัวแปร DRUG_DICTIONARY ในไฟล์ drug_data.js
+        const drugInfo = typeof DRUG_DICTIONARY !== 'undefined' ? DRUG_DICTIONARY[drugName] : null;
+        
+        document.getElementById('info-drug-name').innerText = drugName;
+        if (drugInfo) {
+            document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
+            document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-admin').innerHTML = drugInfo.admin || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-precautions').innerHTML = drugInfo.precautions || 'ไม่มีข้อมูล';
+        } else {
+            document.getElementById('info-drug-unit').innerText = '-';
+            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูลการเตรียมยา</i></span>';
+            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูลการบริหารยา</i></span>';
+            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูลข้อควรระวัง</i></span>';
+        }
+        displayDiv.style.display = 'block';
+    },
+
+    // ================== ระบบ Login & สมัครสมาชิก ==================
+    async login() {
+        const u = document.getElementById('login-username').value;
+        const p = document.getElementById('login-password').value;
+        if (!u || !p) return alert("กรุณากรอก Username และ Password");
+        const res = await this.callAPI({ action: 'login', username: u, password: p });
+        if (res && res.status === 'success') {
+            this.user = res.user;
+            localStorage.setItem('rxUser', JSON.stringify(res.user));
+            this.showMainApp();
+            this.loadDashboardData();
+        } else alert(res ? res.message : 'เข้าสู่ระบบล้มเหลว');
+    },
+
+    async register() {
+        const u = document.getElementById('reg-username').value;
+        const p = document.getElementById('reg-password').value;
+        const e = document.getElementById('reg-email').value;
+        const d = document.getElementById('reg-dept').value;
+        if (!u || !p || !e) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        const res = await this.callAPI({ action: 'register', username: u, password: p, email: e, role: 'User', department: d });
+        if (res && res.status === 'success') {
+            alert("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
+            this.navigateAuth('page-login');
+            ['reg-username', 'reg-password', 'reg-email'].forEach(id => document.getElementById(id).value = '');
+        } else alert(res ? res.message : 'เกิดข้อผิดพลาด');
+    },
+
+    async forgotPassword() {
+        const e = document.getElementById('forgot-email').value;
+        if (!e) return alert("กรุณากรอก E-mail");
+        const res = await this.callAPI({ action: 'reset_password', email: e });
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.navigateAuth('page-login');
+            document.getElementById('forgot-email').value = '';
+        } else alert(res ? res.message : 'ไม่พบ E-mail นี้');
+    },
+
+    logout() {
+        localStorage.removeItem('rxUser');
+        this.user = null;
+        ['login-username', 'login-password'].forEach(id => document.getElementById(id).value = '');
+        this.navigateAuth('page-login');
+    },
+
+    // ================== ระบบแสดงผลกล่องยา ==================
     async loadDashboardData() {
-        // ใช้ Promise.all เพื่อยิง 2 API พร้อมกัน ประหยัดเวลาไปได้ครึ่งนึง!
+        // ใช้ Promise.all โหลดพร้อมกัน 2 เส้น ลดเวลาลงครึ่งนึง
         const [dashRes, logRes] = await Promise.all([
             this.callAPI({ action: 'get_dashboard' }),
             this.callAPI({ action: 'get_recent_logs' })
         ]);
 
-        // 1. จัดการข้อมูล Dashboard
         if (dashRes && dashRes.status === 'success') {
             let totalBoxes = 0, totalDrugs = 0, exp3m = 0;
             const container = document.getElementById('ward-grid-container');
@@ -104,7 +231,6 @@ const app = {
             document.getElementById('stat-exp-3m').innerText = exp3m;
         }
 
-        // 2. จัดการข้อมูล Logs
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
             tbody.innerHTML = '';
@@ -119,7 +245,6 @@ const app = {
     async openBoxDetail(boxId, dept, type, boxName, boxStatus) {
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName; this.currentBoxStatus = boxStatus;
         
-        // ตรวจสอบสิทธิ์ว่าเป็นเภสัชฯ หรือเป็นเจ้าของตึก
         const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
         const isOwner = (this.user.dept === dept);
         const canEdit = isPharmacy || isOwner;
@@ -130,13 +255,8 @@ const app = {
         
         this.navigateMenu('page-box-detail');
         
-        // 📌 ซ่อน/แสดง ปุ่มด้านบนตามสิทธิ์
         document.getElementById('btn-add-drug').style.display = canEdit ? 'block' : 'none';
-        
-        // เจ้าของกล่องที่ไม่ใช่เภสัช สามารถกดส่งให้เภสัชได้
         document.getElementById('btn-send-pharma').style.display = (!isPharmacy && isOwner && boxStatus !== 'ส่งปรับแก้') ? 'block' : 'none';
-        
-        // เภสัชสามารถกดเคลียร์สถานะได้ ถ้ากล่องนั้นโดนส่งมา
         document.getElementById('btn-clear-status').style.display = (isPharmacy && boxStatus === 'ส่งปรับแก้') ? 'block' : 'none';
 
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
@@ -153,7 +273,6 @@ const app = {
                 const isExpiring = expDate <= threeMonths;
                 const itemJson = encodeURIComponent(JSON.stringify(item));
                 
-                // สร้างปุ่มจัดการ (มีทั้งแก้ไข และ ยืนยันถูกต้องรายตัว)
                 let actionButtons = '-';
                 if (canEdit) {
                     actionButtons = `
@@ -179,7 +298,6 @@ const app = {
         }
     },
 
-    // 📌 ยืนยันความถูกต้องรายตัว
     async verifyItem(itemId) {
         const res = await this.callAPI({ action: 'verify_item', itemID: itemId, username: this.user.username });
         if (res && res.status === 'success') {
@@ -187,7 +305,6 @@ const app = {
         } else alert('เกิดข้อผิดพลาดในการบันทึก');
     },
 
-    // 📌 เปลี่ยนสถานะกล่อง (ส่งเภสัช / เคลียร์)
     async updateBoxStatus(status) {
         let confirmMsg = status === 'ส่งปรับแก้' ? "ต้องการส่งกล่องนี้ให้ฝ่ายเภสัชกรรมปรับแก้ใช่หรือไม่?" : "ยืนยันการเคลียร์สถานะว่าปรับแก้เรียบร้อยแล้ว?";
         if (!confirm(confirmMsg)) return;
@@ -196,7 +313,7 @@ const app = {
         if (res && res.status === 'success') {
             alert(res.message);
             this.loadDashboardData();
-            this.navigateMenu('page-wards'); // กลับไปหน้าตารางวอร์ด
+            this.navigateMenu('page-wards'); 
         } else alert('เกิดข้อผิดพลาด');
     },
 
@@ -213,14 +330,14 @@ const app = {
             document.getElementById('form-storage').value = item.storageLoc || 'ในกล่อง (In Box)';
             document.getElementById('form-unit-display').innerText = ''; 
             document.getElementById('form-is-opened').checked = false; 
-            document.getElementById('form-verifier').value = this.user.username; // ดึงชื่อ User อัตโนมัติ
+            document.getElementById('form-verifier').value = this.user.username; 
         } else {
             document.getElementById('modal-title').innerText = "เพิ่มรายการยาใหม่";
             ['item-id', 'drug-name', 'lot', 'qty', 'exp'].forEach(id => document.getElementById('form-' + id).value = '');
             document.getElementById('form-storage').value = 'ในกล่อง (In Box)';
             document.getElementById('form-unit-display').innerText = '';
             document.getElementById('form-is-opened').checked = false;
-            document.getElementById('form-verifier').value = this.user.username; // ดึงชื่อ User อัตโนมัติ
+            document.getElementById('form-verifier').value = this.user.username; 
         }
     },
 
@@ -249,6 +366,17 @@ const app = {
             this.closeModal();
             this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
+    },
+
+    async doStockTake() {
+        const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
+        if (!confirmTake) return;
+        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept, username: this.user.username });
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.loadDashboardData();
+            this.navigateMenu('page-wards');
+        } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
     }
 };
 
