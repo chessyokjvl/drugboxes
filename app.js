@@ -176,7 +176,9 @@ const app = {
                         <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
                         <td>${item.qty}</td>
                         <td style="font-size: 0.85rem; color: #666;">${new Date(item.lastUpdate).toLocaleDateString('th-TH')}</td>
-                        <td>${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}</td>
+                        <td class="no-print">
+    ${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}
+</td>
                     </tr>
                 `;
             });
