@@ -137,9 +137,18 @@ const app = {
         document.getElementById('detail-title').innerText = `${type} - ${dept}`;
         this.navigate('page-box-detail');
         
+        // 1. จัดการปุ่ม "เพิ่มรายการ" (เฉพาะ Admin/God Admin)
         const btnAdd = document.getElementById('btn-add-drug');
         btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
         btnAdd.onclick = () => this.openDrugModal();
+
+        // 2. จัดการปุ่ม "Stock Take" (เฉพาะ Admin หรือ User ที่อยู่แผนกตรงกับกล่องยา)
+        const btnStockTake = document.getElementById('btn-stock-take');
+        if (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) {
+            btnStockTake.style.display = 'block';
+        } else {
+            btnStockTake.style.display = 'none';
+        }
 
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
