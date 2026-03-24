@@ -6,6 +6,7 @@
     --white: #FFFFFF;
     --text-dark: #333333;
     --danger: #e74c3c;
+    --warning-orange: #f39c12;
     --sidebar-width: 250px;
 }
 
@@ -36,8 +37,6 @@ body { background: var(--bg-blue); color: var(--text-dark); overflow-x: hidden; 
     .sidebar.open { transform: translateX(0); }
     .main-content { margin-left: 0; }
     .menu-toggle { display: block; }
-    
-    /* Overlay for mobile sidebar */
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
     .sidebar-overlay.active { display: block; }
 }
@@ -56,19 +55,35 @@ body { background: var(--bg-blue); color: var(--text-dark); overflow-x: hidden; 
 .stat-info h4 { font-size: 0.9rem; color: #666; font-weight: 400; }
 .stat-info h2 { font-size: 1.8rem; color: var(--text-dark); }
 
-/* ================= Ward Grid (Responsive 3 col Desktop / 2 col Mobile) ================= */
+/* ================= Ward Grid (Colors for Box Types) ================= */
 .ward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
 @media (max-width: 768px) { .ward-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; } }
 
-.box-card { background: var(--white); padding: 20px; border-radius: 12px; border-left: 6px solid var(--primary-green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; position: relative; }
+.box-card { background: var(--white); padding: 20px; border-radius: 12px; border-left: 6px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; position: relative; }
 .box-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-.box-card.warning { border-left-color: var(--danger); }
-.box-title { font-size: 1.2rem; font-weight: 600; color: var(--primary-green); margin-bottom: 5px; }
+.box-card.warning::after { content: '⚠️'; position: absolute; top: 15px; right: 15px; font-size: 1.2rem; }
 
-/* ================= Auth & Components (Keep existing styles) ================= */
+/* สีเฉพาะประเภทกล่อง */
+.box-cpr { border-left-color: var(--danger) !important; }
+.box-cpr .box-title { color: var(--danger); }
+.box-cpr .box-badge { background: #fee2e2; color: var(--danger); }
+
+.box-urgency { border-left-color: var(--warning-orange) !important; }
+.box-urgency .box-title { color: var(--warning-orange); }
+.box-urgency .box-badge { background: #fef5e7; color: var(--warning-orange); }
+
+.box-ward { border-left-color: var(--primary-green) !important; }
+.box-ward .box-title { color: var(--primary-green); }
+.box-ward .box-badge { background: var(--light-green); color: var(--primary-green); }
+
+.box-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
+.box-badge { font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+/* ================= Auth & Components ================= */
 .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--bg-blue) 0%, var(--light-green) 100%); }
 .auth-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border-top: 5px solid var(--primary-green); }
 .form-group { text-align: left; margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
 .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
 .btn-primary { background: var(--primary-green); color: var(--white); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 500; }
 .btn-outline { background: transparent; border: 1px solid var(--primary-green); color: var(--primary-green); padding: 5px 15px; border-radius: 5px; cursor: pointer; }
@@ -77,9 +92,15 @@ body { background: var(--bg-blue); color: var(--text-dark); overflow-x: hidden; 
 .data-table th, .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
 .data-table th { background: var(--light-green); color: var(--primary-green); }
 .exp-warning { color: var(--danger); font-weight: 600; }
+
 #loader { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; }
 .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Modal */
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+.modal-content { background: var(--white); padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; position: relative; border-top: 5px solid var(--accent-gold); max-height: 90vh; overflow-y: auto; }
+.close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; top: 15px; right: 20px; }
 
 /* Print Logic */
 .print-only { display: none; }
