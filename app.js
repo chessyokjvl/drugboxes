@@ -4,11 +4,12 @@ const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ร
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
+    allBoxes: [], // 📌 ตัวแปรเก็บกล่องยาทั้งหมดสำหรับใช้ใน Filter
     tomSelectInstance: null,
     apiActiveCount: 0,
 
     async init() {
-        this.loadMasterData(); // โหลดข้อมูลเบื้องหลัง
+        this.loadMasterData(); 
         const userStr = localStorage.getItem('rxUser');
         if (userStr) {
             this.user = JSON.parse(userStr);
@@ -19,7 +20,6 @@ const app = {
         }
     },
 
-    // ================== ฟังก์ชันสลับหน้า Auth ==================
     navigateAuth(pageId) {
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('auth-container').style.display = 'block';
@@ -48,11 +48,8 @@ const app = {
         document.querySelector('.sidebar-overlay').classList.toggle('active');
     },
 
-    showLoader(show) { 
-        document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
-    },
+    showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; },
 
-    // ================== ฟังก์ชันยิง API ==================
     async callAPI(payload) {
         this.apiActiveCount++;
         this.showLoader(true);
@@ -69,7 +66,6 @@ const app = {
         }
     },
 
-    // ================== ระบบจัดการข้อมูล ==================
     async loadMasterData() {
         const res = await this.callAPI({ action: 'get_master_data' });
         if (res && res.status === 'success') {
@@ -110,10 +106,9 @@ const app = {
         const displayDiv = document.getElementById('drug-info-display');
         if (!drugName) { displayDiv.style.display = 'none'; return; }
         
-        // ดึงจากตัวแปร DRUG_DICTIONARY ในไฟล์ drug_data.js
         const drugInfo = typeof DRUG_DICTIONARY !== 'undefined' ? DRUG_DICTIONARY[drugName] : null;
-        
         document.getElementById('info-drug-name').innerText = drugName;
+        
         if (drugInfo) {
             document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
             document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
@@ -128,7 +123,6 @@ const app = {
         displayDiv.style.display = 'block';
     },
 
-    // ================== ระบบ Login & สมัครสมาชิก ==================
     async login() {
         const u = document.getElementById('login-username').value;
         const p = document.getElementById('login-password').value;
@@ -174,61 +168,32 @@ const app = {
         this.navigateAuth('page-login');
     },
 
-    // ================== ระบบแสดงผลกล่องยา ==================
     async loadDashboardData() {
-        // ใช้ Promise.all โหลดพร้อมกัน 2 เส้น ลดเวลาลงครึ่งนึง
         const [dashRes, logRes] = await Promise.all([
             this.callAPI({ action: 'get_dashboard' }),
             this.callAPI({ action: 'get_recent_logs' })
         ]);
 
         if (dashRes && dashRes.status === 'success') {
+            // 📌 1. เก็บข้อมูลลง Local เพื่อใช้ทำ Filter
+            this.allBoxes = dashRes.data;
+
+            // 📌 2. คำนวณสถิติภาพรวมสำหรับหน้า Dashboard
             let totalBoxes = 0, totalDrugs = 0, exp3m = 0;
-            const container = document.getElementById('ward-grid-container');
-            container.innerHTML = '';
-
-            const sortedBoxes = dashRes.data.sort((a, b) => {
-                let indexA = WARD_ORDER.indexOf(a.department);
-                let indexB = WARD_ORDER.indexOf(b.department);
-                if(indexA === -1) indexA = 999; 
-                if(indexB === -1) indexB = 999;
-                return indexA - indexB;
-            });
-
-            sortedBoxes.forEach(box => {
+            this.allBoxes.forEach(box => {
                 totalBoxes++;
                 totalDrugs += box.totalDrugs;
                 exp3m += box.expiringSoon;
-                
-                const isWarning = box.expiringSoon > 0;
-                let boxColorClass = 'box-ward'; 
-                const typeStr = box.boxType.toLowerCase();
-                if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; 
-                else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; 
-
-                const isSent = (box.boxStatus === 'ส่งปรับแก้');
-
-                const card = document.createElement('div');
-                card.className = `box-card ${boxColorClass} ${isWarning ? 'warning' : ''}`;
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between;">
-                        <div class="box-title">${box.boxName}</div>
-                        ${isSent ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem;">รอเภสัชฯ</span>` : ''}
-                    </div>
-                    <div style="margin-bottom: 8px;"><span class="box-badge">${box.boxType}</span></div>
-                    <div style="color: #666; margin: 10px 0;"><i class="fas fa-clinic-medical"></i> ${box.department}</div>
-                    <div style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px;">
-                        รายการยา: <b>${box.totalDrugs}</b><br>
-                        ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ ยาไม่หมดอายุ</span>`}
-                    </div>
-                `;
-                card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName, box.boxStatus);
-                container.appendChild(card);
             });
-
             document.getElementById('stat-total-boxes').innerText = totalBoxes;
             document.getElementById('stat-total-drugs').innerText = totalDrugs;
             document.getElementById('stat-exp-3m').innerText = exp3m;
+
+            // 📌 3. เตรียมข้อมูลให้ Dropdown (Filter)
+            this.setupFilters();
+
+            // 📌 4. วาดกล่องยาลงในหน้า Wards
+            this.filterWards();
         }
 
         if (logRes && logRes.status === 'success') {
@@ -241,6 +206,103 @@ const app = {
             });
         }
     },
+
+    // ==========================================
+    // 📌 ระบบจัดการ Filter
+    // ==========================================
+    setupFilters() {
+        const deptFilter = document.getElementById('filter-dept');
+        const typeFilter = document.getElementById('filter-type');
+        
+        const currentDept = deptFilter.value;
+        const currentType = typeFilter.value;
+
+        // ดึงเฉพาะหน่วยงานและประเภทที่มีอยู่จริงในกล่องทั้งหมด
+        const uniqueTypes = [...new Set(this.allBoxes.map(b => b.boxType))].filter(Boolean);
+        
+        // ใส่ข้อมูลลง Dropdown หน่วยงาน (ใช้จาก Master Data เพื่อความครบถ้วน)
+        deptFilter.innerHTML = '<option value="all">-- ทุกหน่วยงาน --</option>';
+        if (this.masterData && this.masterData.departments) {
+            this.masterData.departments.forEach(dept => {
+                deptFilter.innerHTML += `<option value="${dept}">${dept}</option>`;
+            });
+        }
+
+        // ใส่ข้อมูลลง Dropdown ประเภทกล่อง
+        typeFilter.innerHTML = '<option value="all">-- ทุกประเภท --</option>';
+        uniqueTypes.forEach(type => {
+            typeFilter.innerHTML += `<option value="${type}">${type}</option>`;
+        });
+
+        // คืนค่าที่ User เคยเลือกไว้
+        if (currentDept) deptFilter.value = currentDept;
+        if (currentType) typeFilter.value = currentType;
+    },
+
+    filterWards() {
+        const deptVal = document.getElementById('filter-dept').value;
+        const typeVal = document.getElementById('filter-type').value;
+
+        // กรองกล่องที่ตรงกับเงื่อนไข
+        let filteredBoxes = this.allBoxes.filter(box => {
+            let matchDept = (deptVal === 'all') || (box.department === deptVal);
+            let matchType = (typeVal === 'all') || (box.boxType === typeVal);
+            return matchDept && matchType;
+        });
+
+        // เรียงลำดับตาม WARD_ORDER
+        filteredBoxes.sort((a, b) => {
+            let indexA = WARD_ORDER.indexOf(a.department);
+            let indexB = WARD_ORDER.indexOf(b.department);
+            if(indexA === -1) indexA = 999; 
+            if(indexB === -1) indexB = 999;
+            return indexA - indexB;
+        });
+
+        // เริ่มวาดลง HTML
+        const container = document.getElementById('ward-grid-container');
+        container.innerHTML = '';
+
+        if (filteredBoxes.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #999; background: var(--white); border-radius: 12px;">ไม่พบกล่องยาที่ตรงกับเงื่อนไข</div>';
+            return;
+        }
+
+        filteredBoxes.forEach(box => {
+            const isWarning = box.expiringSoon > 0;
+            let boxColorClass = 'box-ward'; 
+            const typeStr = box.boxType.toLowerCase();
+            if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; 
+            else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; 
+
+            const isSent = (box.boxStatus === 'ส่งปรับแก้');
+
+            const card = document.createElement('div');
+            card.className = `box-card ${boxColorClass} ${isWarning ? 'warning' : ''}`;
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between;">
+                    <div class="box-title">${box.boxName}</div>
+                    ${isSent ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem;">รอเภสัชฯ</span>` : ''}
+                </div>
+                <div style="margin-bottom: 8px;"><span class="box-badge">${box.boxType}</span></div>
+                <div style="color: #666; margin: 10px 0;"><i class="fas fa-clinic-medical"></i> ${box.department}</div>
+                <div style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px;">
+                    รายการยา: <b>${box.totalDrugs}</b><br>
+                    ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ ยาไม่หมดอายุ</span>`}
+                </div>
+            `;
+            card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName, box.boxStatus);
+            container.appendChild(card);
+        });
+    },
+
+    resetFilters() {
+        document.getElementById('filter-dept').value = 'all';
+        document.getElementById('filter-type').value = 'all';
+        this.filterWards();
+    },
+
+    // ==========================================
 
     async openBoxDetail(boxId, dept, type, boxName, boxStatus) {
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName; this.currentBoxStatus = boxStatus;
