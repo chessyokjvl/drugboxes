@@ -91,20 +91,40 @@
     </div>
 
     <div id="page-box-detail" class="page">
-        <nav class="navbar">
+        <nav class="navbar no-print">
             <div class="nav-brand" onclick="app.navigate('page-dashboard')" style="cursor:pointer;"><i class="fas fa-arrow-left"></i> กลับไป Dashboard</div>
         </nav>
-        <div class="header-action">
+        
+        <div id="print-header" class="print-only">
+            <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo">
+            <h3>รายงานสถานะคลังยา โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
+            <p><b>หน่วยงาน:</b> <span id="print-dept-name"></span> | <b>ประเภท:</b> <span id="print-box-name"></span></p>
+            <p>ข้อมูล ณ วันที่: <span id="print-date"></span></p>
+            <hr style="margin-top: 15px; border: 0; border-top: 1px solid #ccc;">
+        </div>
+
+        <div class="header-action no-print">
             <h2 id="detail-title">รายการยา</h2>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-outline" style="color: var(--primary-green); border-color: var(--primary-green); width: auto;" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print / PDF
+                </button>
                 <button class="btn-primary" id="btn-stock-take" style="background: #27ae60; width: auto;" onclick="app.doStockTake()">
-                    <i class="fas fa-check-double"></i> ยืนยันตรวจสอบ (Stock Take)
+                    <i class="fas fa-check-double"></i> Stock Take
                 </button>
                 <button class="btn-primary" id="btn-add-drug" style="width: auto;">
                     <i class="fas fa-plus"></i> เพิ่มรายการ
                 </button>
             </div>
         </div>
+        
+        <div class="table-container">
+            <table class="data-table">
+                <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>อัปเดตล่าสุด</th><th class="no-print">จัดการ</th></tr></thead>
+                <tbody id="detail-tbody"></tbody>
+            </table>
+        </div>
+    </div>
         <div class="table-container">
             <table class="data-table">
                 <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>อัปเดตล่าสุด</th><th>จัดการ</th></tr></thead>
