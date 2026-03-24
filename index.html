@@ -96,7 +96,14 @@
         </nav>
         <div class="header-action">
             <h2 id="detail-title">รายการยา</h2>
-            <button class="btn-primary" id="btn-add-drug" style="width: auto;"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" id="btn-stock-take" style="background: #27ae60; width: auto;" onclick="app.doStockTake()">
+                    <i class="fas fa-check-double"></i> ยืนยันตรวจสอบ (Stock Take)
+                </button>
+                <button class="btn-primary" id="btn-add-drug" style="width: auto;">
+                    <i class="fas fa-plus"></i> เพิ่มรายการ
+                </button>
+            </div>
         </div>
         <div class="table-container">
             <table class="data-table">
