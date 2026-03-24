@@ -4,9 +4,11 @@ const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ร
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
-    allBoxes: [], // 📌 ตัวแปรเก็บกล่องยาทั้งหมดสำหรับใช้ใน Filter
+    allBoxes: [],
     tomSelectInstance: null,
     apiActiveCount: 0,
+    currentReturnPage: 'page-box-detail', // 📌 ตัวบอกว่าหลัง Save ยาเสร็จให้กลับไปหน้าไหน
+    currentFilterType: 'all',
 
     async init() {
         this.loadMasterData(); 
@@ -70,19 +72,16 @@ const app = {
         const res = await this.callAPI({ action: 'get_master_data' });
         if (res && res.status === 'success') {
             this.masterData = res;
-            
             const deptSelect = document.getElementById('reg-dept');
             if (deptSelect) {
                 deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
                 res.departments.forEach(dept => deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`);
             }
-
             const drugList = document.getElementById('drug-master-list');
             if (drugList) {
                 drugList.innerHTML = '';
                 res.drugs.forEach(drug => drugList.innerHTML += `<option value="${drug.name}">`);
             }
-
             const drugInput = document.getElementById('form-drug-name');
             if (drugInput) {
                 drugInput.addEventListener('input', (e) => {
@@ -91,7 +90,6 @@ const app = {
                     unitDisplay.innerText = (selectedDrug && selectedDrug.unit) ? `(${selectedDrug.unit})` : '';
                 });
             }
-
             const searchSelect = document.getElementById('search-drug-info');
             if (searchSelect) {
                 searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
@@ -105,10 +103,8 @@ const app = {
     showDrugInfo(drugName) {
         const displayDiv = document.getElementById('drug-info-display');
         if (!drugName) { displayDiv.style.display = 'none'; return; }
-        
         const drugInfo = typeof DRUG_DICTIONARY !== 'undefined' ? DRUG_DICTIONARY[drugName] : null;
         document.getElementById('info-drug-name').innerText = drugName;
-        
         if (drugInfo) {
             document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
             document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
@@ -175,24 +171,13 @@ const app = {
         ]);
 
         if (dashRes && dashRes.status === 'success') {
-            // 📌 1. เก็บข้อมูลลง Local เพื่อใช้ทำ Filter
             this.allBoxes = dashRes.data;
-
-            // 📌 2. คำนวณสถิติภาพรวมสำหรับหน้า Dashboard
             let totalBoxes = 0, totalDrugs = 0, exp3m = 0;
-            this.allBoxes.forEach(box => {
-                totalBoxes++;
-                totalDrugs += box.totalDrugs;
-                exp3m += box.expiringSoon;
-            });
+            this.allBoxes.forEach(box => { totalBoxes++; totalDrugs += box.totalDrugs; exp3m += box.expiringSoon; });
             document.getElementById('stat-total-boxes').innerText = totalBoxes;
             document.getElementById('stat-total-drugs').innerText = totalDrugs;
             document.getElementById('stat-exp-3m').innerText = exp3m;
-
-            // 📌 3. เตรียมข้อมูลให้ Dropdown (Filter)
             this.setupFilters();
-
-            // 📌 4. วาดกล่องยาลงในหน้า Wards
             this.filterWards();
         }
 
@@ -207,34 +192,20 @@ const app = {
         }
     },
 
-    // ==========================================
-    // 📌 ระบบจัดการ Filter
-    // ==========================================
     setupFilters() {
         const deptFilter = document.getElementById('filter-dept');
         const typeFilter = document.getElementById('filter-type');
-        
         const currentDept = deptFilter.value;
         const currentType = typeFilter.value;
-
-        // ดึงเฉพาะหน่วยงานและประเภทที่มีอยู่จริงในกล่องทั้งหมด
         const uniqueTypes = [...new Set(this.allBoxes.map(b => b.boxType))].filter(Boolean);
         
-        // ใส่ข้อมูลลง Dropdown หน่วยงาน (ใช้จาก Master Data เพื่อความครบถ้วน)
         deptFilter.innerHTML = '<option value="all">-- ทุกหน่วยงาน --</option>';
         if (this.masterData && this.masterData.departments) {
-            this.masterData.departments.forEach(dept => {
-                deptFilter.innerHTML += `<option value="${dept}">${dept}</option>`;
-            });
+            this.masterData.departments.forEach(dept => deptFilter.innerHTML += `<option value="${dept}">${dept}</option>`);
         }
-
-        // ใส่ข้อมูลลง Dropdown ประเภทกล่อง
         typeFilter.innerHTML = '<option value="all">-- ทุกประเภท --</option>';
-        uniqueTypes.forEach(type => {
-            typeFilter.innerHTML += `<option value="${type}">${type}</option>`;
-        });
+        uniqueTypes.forEach(type => typeFilter.innerHTML += `<option value="${type}">${type}</option>`);
 
-        // คืนค่าที่ User เคยเลือกไว้
         if (currentDept) deptFilter.value = currentDept;
         if (currentType) typeFilter.value = currentType;
     },
@@ -243,23 +214,17 @@ const app = {
         const deptVal = document.getElementById('filter-dept').value;
         const typeVal = document.getElementById('filter-type').value;
 
-        // กรองกล่องที่ตรงกับเงื่อนไข
         let filteredBoxes = this.allBoxes.filter(box => {
-            let matchDept = (deptVal === 'all') || (box.department === deptVal);
-            let matchType = (typeVal === 'all') || (box.boxType === typeVal);
-            return matchDept && matchType;
+            return (deptVal === 'all' || box.department === deptVal) && (typeVal === 'all' || box.boxType === typeVal);
         });
 
-        // เรียงลำดับตาม WARD_ORDER
         filteredBoxes.sort((a, b) => {
             let indexA = WARD_ORDER.indexOf(a.department);
             let indexB = WARD_ORDER.indexOf(b.department);
-            if(indexA === -1) indexA = 999; 
-            if(indexB === -1) indexB = 999;
+            if(indexA === -1) indexA = 999; if(indexB === -1) indexB = 999;
             return indexA - indexB;
         });
 
-        // เริ่มวาดลง HTML
         const container = document.getElementById('ward-grid-container');
         container.innerHTML = '';
 
@@ -302,9 +267,8 @@ const app = {
         this.filterWards();
     },
 
-    // ==========================================
-
     async openBoxDetail(boxId, dept, type, boxName, boxStatus) {
+        this.currentReturnPage = 'page-box-detail'; // เซ็ตว่าหลังเซฟให้กลับมาหน้านี้
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName; this.currentBoxStatus = boxStatus;
         
         const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
@@ -358,6 +322,76 @@ const app = {
                 `;
             });
         }
+    },
+
+    // 📌 ฟังก์ชันเปิดหน้ารายการยาทั้งหมด (Filtered List)
+    async showFilteredList(filterType) {
+        this.currentReturnPage = 'page-filtered-list'; 
+        this.currentFilterType = filterType; 
+        
+        document.getElementById('filtered-list-title').innerText = filterType === 'expiring' ? 'รายการยาใกล้หมดอายุ (ภายใน 3 เดือน)' : 'รายการยาทั้งหมดในระบบ';
+        this.navigateMenu('page-filtered-list');
+
+        const res = await this.callAPI({ action: 'get_all_inventory' });
+        if (res && res.status === 'success') {
+            const tbody = document.getElementById('filtered-tbody');
+            tbody.innerHTML = '';
+            
+            const threeMonths = new Date();
+            threeMonths.setDate(new Date().getDate() + 90);
+
+            let displayData = res.data;
+            if (filterType === 'expiring') {
+                displayData = res.data.filter(item => new Date(item.expireDate) <= threeMonths);
+            }
+
+            // จัดเรียงตามชื่อยา แล้วค่อยตามด้วยตึก
+            displayData.sort((a, b) => a.drugName.localeCompare(b.drugName));
+
+            if (displayData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+
+            const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
+
+            displayData.forEach(item => {
+                const expDate = new Date(item.expireDate);
+                const isExpiring = expDate <= threeMonths;
+                const itemJson = encodeURIComponent(JSON.stringify(item));
+                const isOwner = (this.user.dept === item.department);
+                const canEdit = isPharmacy || isOwner;
+
+                let actionBtn = '-';
+                if(canEdit) {
+                    actionBtn = `<button class="btn-outline no-print" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b style="color:var(--primary-green);">${item.department}</b><br><span style="font-size:0.8rem; color:#666;">${item.boxName}</span></td>
+                        <td><b style="font-weight: 500;">${item.drugName}</b></td>
+                        <td>${item.lotNumber}</td>
+                        <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
+                        <td>${item.qty}</td>
+                        <td><span style="font-size:0.8rem; background:#eee; padding:2px 6px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
+                        <td class="no-print">${actionBtn}</td>
+                    </tr>
+                `;
+            });
+        }
+    },
+
+    // 📌 ฟังก์ชันเปิด Modal แก้ไขจากหน้า Global List
+    openDrugModalFromGlobal(itemJsonEncoded) {
+        const item = JSON.parse(decodeURIComponent(itemJsonEncoded));
+        // ตั้งค่ากล่องให้ระบบรู้ว่ายานี้อยู่กล่องไหน
+        this.currentBoxId = item.department + '_' + item.boxName; 
+        this.currentBoxDept = item.department;
+        this.currentBoxType = item.boxType;
+        this.currentBoxName = item.boxName;
+        // เรียก Modal เดิม
+        this.openDrugModal(itemJsonEncoded);
     },
 
     async verifyItem(itemId) {
@@ -426,7 +460,12 @@ const app = {
         if (res && res.status === 'success') {
             alert(res.message);
             this.closeModal();
-            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
+            // 📌 เช็คว่าแก้ไขมาจากหน้าไหน ให้กลับไปอัปเดตหน้านั้น
+            if (this.currentReturnPage === 'page-filtered-list') {
+                this.showFilteredList(this.currentFilterType);
+            } else {
+                this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
+            }
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
     },
 
