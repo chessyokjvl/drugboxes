@@ -1,4 +1,69 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
+// ==========================================
+// 📚 ฐานข้อมูลคู่มือยา (Local Drug Dictionary)
+// ==========================================
+// คุณสามารถมาเพิ่ม/แก้ไข ข้อมูลยาตรงนี้ได้เลยโดยใช้ HTML จัดรูปแบบให้สวยงาม
+const DRUG_DICTIONARY = {
+    "Adrenaline 1mg/1ml inj.": {
+        unit: "Ampoule",
+        prep: `<b>กรณี CPR:</b> 10 mg (10 ml) + NSS/D5W up to 100 ml (Concentration 1:10)
+<br><b>ตัวอย่าง:</b> Adrenaline 10 mg (10 ml) + NSS up to 100 ml (1:10) IV rate 5 ml/hr`,
+        admin: `<b>CPR:</b> 0.5-1mg (5-10 ml) IV stat, ให้ซ้ำ 5 ml IV ทุก 5 นาที
+<b>Unstable bradycardia:</b> เริ่มต้น 1.2 ml/hr (ปรับทีละ 5, Max 6 ml/hr)
+<b>Post-cardiac arrest / Refractory shock:</b> เริ่มต้น 5 ml/hr (ปรับทีละ 5, Max 36 ml/hr)`,
+        precautions: `• ขนาดยาเด็ก: 0.01 mg/Kg/dose
+• <b>ข้อควรระวัง:</b> หากเก็บนอกตู้เย็น อายุยาเหลือ 12 เดือนที่อุณหภูมิห้อง`
+    },
+    "Norepinephrine": {
+        unit: "Ampoule",
+        prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)
+<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 5 ml/hr 
+<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 8 ml/hr
+<b>Max dose:</b> 450 ml/hr`,
+        precautions: `• <b>ข้อควรระวัง:</b> ระวัง smoking - limb ischemia (ภาวะขาดเลือดที่แขนขา)`
+    },
+    "Dopamine": {
+        unit: "Ampoule",
+        prep: `<b>Unstable bradycardia:</b> 100 mg (4 ml) + NSS up to 100 ml (Concentration 1:1)
+<br><b>ตัวอย่าง:</b> Dopamine 100 mg (4 ml) + NSS up to 100 ml (1:1) IV rate 20 ml/hr`,
+        admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr
+<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr
+<b>Max dose:</b> 72 ml/hr`,
+        precautions: `• <b>ข้อควรระวัง:</b> ระวังภาวะ MI และ Tachyarrhythmia`
+    },
+    "Amiodarone 50 mg/ml inj. (3ml)": {
+        unit: "Ampoule",
+        prep: `<b>AF / Stable VT:</b> 150 mg (3 ml) + D5W up to 100 ml
+<b>ตัวอย่างต่อเนื่อง:</b> 900 mg (16 ml) + D5W 500 ml
+<br><b>CPR Box:</b> 150 mg (3 ml) + D5W up to 100 ml (Concentration 15:10)`,
+        admin: `<b>Dose แรก:</b> IV drip in 30 mins (Rate 200 ml/hr)
+<b>Dose ต่อเนื่อง:</b> จากนั้น 900 mg IV drip in 24 hr`,
+        precautions: `• <span style="color:red; font-weight:bold;">ห้ามให้ใน case QT prolonged</span>
+• แนะนำให้เก็บ Thyroid Function Test (TFT) ก่อนให้ยา`
+    },
+    "Lidocaine": {
+        unit: "Vial/Ampoule",
+        prep: `<b>Monomorphic VT:</b> 2% Lidocaine 60 mg (3 ml) หรือ 80 mg (4 ml)
+<b>Maintenance:</b> 400 mg (20 ml) in NSS 100 ml`,
+        admin: `<b>Dose แรก:</b> Slowly push ช้าๆ 5-10 นาที (สามารถ repeat dose ทุก 10-15 นาที)
+<b>Maintenance:</b> 400 mg in NSS 100 ml IV rate 15 ml/hr`,
+        precautions: `• ระวังเรื่องการให้เร็วเกินไป อาจเกิดพิษจาก Lidocaine (Neurotoxicity, Arrhythmia)`
+    },
+    "Magnesium sulfate (MgSO4)": {
+        unit: "Ampoule",
+        prep: `<b>Stable torsade de pointes:</b>
+<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml
+<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
+        admin: `<b>Dose 1:</b> Drip in 15 mins (IV rate 400 ml/hr)
+<b>Dose 2 (then):</b> Drip in 4 hrs (IV rate 25 ml/hr)`,
+        precautions: `• เฝ้าระวังระดับ Magnesium ในเลือด, Deep tendon reflexes (DTR) และอัตราการหายใจ`
+    }
+};
+
+// ==========================================
+// 🚀 เริ่มการทำงานของระบบ (Main Application)
+// ==========================================
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null,
     masterData: { departments: [], drugs: [] },
@@ -73,9 +138,11 @@ const app = {
             const searchSelect = document.getElementById('search-drug-info');
             if (searchSelect) {
                 searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
+                // ดึงรายชื่อยามาใส่ในช่องค้นหา (ดึงจากทั้ง Sheet และ Local Dictionary เผื่อไว้)
                 res.drugs.forEach(drug => {
                     searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`;
                 });
+                
                 if (this.tomSelectInstance) this.tomSelectInstance.destroy();
                 this.tomSelectInstance = new TomSelect("#search-drug-info", {
                     create: false,
@@ -86,18 +153,31 @@ const app = {
         }
     },
 
+    // ==========================================
+    // 📖 ฟังก์ชันแสดงข้อมูลคู่มือยา
+    // ==========================================
     showDrugInfo(drugName) {
         const displayDiv = document.getElementById('drug-info-display');
         if (!drugName) { displayDiv.style.display = 'none'; return; }
-        const drug = this.masterData.drugs.find(d => d.name === drugName);
-        if (drug) {
-            document.getElementById('info-drug-name').innerText = drug.name;
-            document.getElementById('info-drug-unit').innerText = drug.unit || '-';
-            document.getElementById('info-drug-prep').innerText = drug.preparation !== '-' ? drug.preparation : 'ไม่มีข้อมูลการเตรียมยาในระบบ';
-            document.getElementById('info-drug-admin').innerText = drug.administration !== '-' ? drug.administration : 'ไม่มีข้อมูลการบริหารยาในระบบ';
-            document.getElementById('info-drug-precautions').innerText = drug.precautions !== '-' ? drug.precautions : 'ไม่มีข้อมูลข้อควรระวังในระบบ';
-            displayDiv.style.display = 'block';
+        
+        // ค้นหาข้อมูลจาก Local Dictionary ก่อน ถ้าไม่มีค่อยแสดงค่า Default
+        const drugInfo = DRUG_DICTIONARY[drugName];
+        
+        document.getElementById('info-drug-name').innerText = drugName;
+        
+        if (drugInfo) {
+            document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
+            document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-admin').innerHTML = drugInfo.admin || 'ไม่มีข้อมูล';
+            document.getElementById('info-drug-precautions').innerHTML = drugInfo.precautions || 'ไม่มีข้อมูล';
+        } else {
+            document.getElementById('info-drug-unit').innerText = '-';
+            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
         }
+        
+        displayDiv.style.display = 'block';
     },
 
     async login() {
