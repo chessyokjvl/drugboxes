@@ -1,8 +1,11 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null,
+    masterData: { departments: [], drugs: [] },
+    tomSelectInstance: null,
 
-    init() {
+    async init() {
+        await this.loadMasterData();
         const userStr = localStorage.getItem('rxUser');
         if (userStr) {
             this.user = JSON.parse(userStr);
@@ -33,11 +36,74 @@ const app = {
         }
     },
 
+    async loadMasterData() {
+        const res = await this.callAPI({ action: 'get_master_data' });
+        if (res && res.status === 'success') {
+            this.masterData = res;
+            
+            // 1. Setup Dropdown แผนก
+            const deptSelect = document.getElementById('reg-dept');
+            if (deptSelect) {
+                deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
+                res.departments.forEach(dept => {
+                    deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`;
+                });
+            }
+
+            // 2. Setup Autocomplete รายชื่อยา (Modal)
+            const drugList = document.getElementById('drug-master-list');
+            if (drugList) {
+                drugList.innerHTML = '';
+                res.drugs.forEach(drug => {
+                    drugList.innerHTML += `<option value="${drug.name}">`;
+                });
+            }
+
+            // 3. ระบบดึงหน่วยนับอัตโนมัติ (Modal)
+            const drugInput = document.getElementById('form-drug-name');
+            if (drugInput) {
+                drugInput.addEventListener('input', (e) => {
+                    const selectedDrug = res.drugs.find(d => d.name === e.target.value);
+                    const unitDisplay = document.getElementById('form-unit-display');
+                    unitDisplay.innerText = (selectedDrug && selectedDrug.unit) ? `(${selectedDrug.unit})` : '';
+                });
+            }
+
+            // 4. ระบบ Tom Select (หน้าคู่มือยา)
+            const searchSelect = document.getElementById('search-drug-info');
+            if (searchSelect) {
+                searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
+                res.drugs.forEach(drug => {
+                    searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`;
+                });
+                if (this.tomSelectInstance) this.tomSelectInstance.destroy();
+                this.tomSelectInstance = new TomSelect("#search-drug-info", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    onChange: (value) => this.showDrugInfo(value)
+                });
+            }
+        }
+    },
+
+    showDrugInfo(drugName) {
+        const displayDiv = document.getElementById('drug-info-display');
+        if (!drugName) { displayDiv.style.display = 'none'; return; }
+        const drug = this.masterData.drugs.find(d => d.name === drugName);
+        if (drug) {
+            document.getElementById('info-drug-name').innerText = drug.name;
+            document.getElementById('info-drug-unit').innerText = drug.unit || '-';
+            document.getElementById('info-drug-prep').innerText = drug.preparation !== '-' ? drug.preparation : 'ไม่มีข้อมูลการเตรียมยาในระบบ';
+            document.getElementById('info-drug-admin').innerText = drug.administration !== '-' ? drug.administration : 'ไม่มีข้อมูลการบริหารยาในระบบ';
+            document.getElementById('info-drug-precautions').innerText = drug.precautions !== '-' ? drug.precautions : 'ไม่มีข้อมูลข้อควรระวังในระบบ';
+            displayDiv.style.display = 'block';
+        }
+    },
+
     async login() {
         const u = document.getElementById('login-username').value;
         const p = document.getElementById('login-password').value;
         if (!u || !p) return alert("กรุณากรอก Username และ Password");
-
         const res = await this.callAPI({ action: 'login', username: u, password: p });
         if (res && res.status === 'success') {
             this.user = res.user;
@@ -51,9 +117,7 @@ const app = {
         const p = document.getElementById('reg-password').value;
         const e = document.getElementById('reg-email').value;
         const d = document.getElementById('reg-dept').value;
-
         if (!u || !p || !e) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-
         const res = await this.callAPI({ action: 'register', username: u, password: p, email: e, role: 'User', department: d });
         if (res && res.status === 'success') {
             alert("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
@@ -65,7 +129,6 @@ const app = {
     async forgotPassword() {
         const e = document.getElementById('forgot-email').value;
         if (!e) return alert("กรุณากรอก E-mail");
-
         const res = await this.callAPI({ action: 'reset_password', email: e });
         if (res && res.status === 'success') {
             alert(res.message);
@@ -85,7 +148,6 @@ const app = {
         document.getElementById('user-display').innerText = `👨‍⚕️ ผู้ใช้: ${this.user.username} (${this.user.role})`;
         this.navigate('page-dashboard');
         
-        // โหลดข้อมูลกล่องยา
         const res = await this.callAPI({ action: 'get_dashboard' });
         if (res && res.status === 'success') {
             const container = document.getElementById('dashboard-container');
@@ -109,7 +171,6 @@ const app = {
             });
         }
 
-        // โหลดประวัติ Logs
         const logRes = await this.callAPI({ action: 'get_recent_logs' });
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
@@ -137,15 +198,12 @@ const app = {
     async openBoxDetail(boxId, dept, type) {
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type;
         document.getElementById('detail-title').innerText = `${type} - ${dept}`;
-        
-        // ข้อมูลส่วน Print
         document.getElementById('print-dept-name').innerText = dept;
         document.getElementById('print-box-name').innerText = type;
         document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
-
+        
         this.navigate('page-box-detail');
         
-        // สิทธิ์การเห็นปุ่มต่างๆ
         const btnAdd = document.getElementById('btn-add-drug');
         btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
         btnAdd.onclick = () => this.openDrugModal();
@@ -153,12 +211,11 @@ const app = {
         const btnStockTake = document.getElementById('btn-stock-take');
         btnStockTake.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) ? 'block' : 'none';
 
-        // โหลดข้อมูลยา
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
             const tbody = document.getElementById('detail-tbody');
             tbody.innerHTML = '';
-            if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่พบรายการยา</td></tr>';
+            if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่พบรายการยา</td></tr>';
 
             const threeMonths = new Date();
             threeMonths.setDate(new Date().getDate() + 90);
@@ -172,6 +229,7 @@ const app = {
                     <tr>
                         <td style="font-weight: 500;">${item.drugName}</td>
                         <td>${item.lotNumber}</td>
+                        <td><span style="font-size:0.85rem; color:var(--primary-green); background:var(--light-green); padding:3px 8px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
                         <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
                         <td>${item.qty}</td>
                         <td style="font-size: 0.85rem; color: #666;">${new Date(item.lastUpdate).toLocaleDateString('th-TH')}</td>
@@ -192,11 +250,15 @@ const app = {
                 const key = id === 'drug-name' ? 'drugName' : (id === 'lot' ? 'lotNumber' : (id === 'exp' ? 'expireDate' : id));
                 document.getElementById('form-' + id).value = item[key];
             });
+            document.getElementById('form-storage').value = item.storageLoc || 'ในกล่อง (In Box)';
+            document.getElementById('form-unit-display').innerText = ''; 
             document.getElementById('form-is-opened').checked = false; 
             document.getElementById('form-verifier').value = '';
         } else {
             document.getElementById('modal-title').innerText = "เพิ่มรายการยาใหม่";
             ['item-id', 'drug-name', 'lot', 'qty', 'exp', 'verifier'].forEach(id => document.getElementById('form-' + id).value = '');
+            document.getElementById('form-storage').value = 'ในกล่อง (In Box)';
+            document.getElementById('form-unit-display').innerText = '';
             document.getElementById('form-is-opened').checked = false;
         }
     },
@@ -211,6 +273,7 @@ const app = {
             drugName: document.getElementById('form-drug-name').value,
             lotNumber: document.getElementById('form-lot').value,
             qty: document.getElementById('form-qty').value,
+            storageLoc: document.getElementById('form-storage').value,
             expireDate: document.getElementById('form-exp').value,
             isOpened: document.getElementById('form-is-opened').checked,
             status: 'Active', username: this.user.username,
@@ -232,11 +295,7 @@ const app = {
     async doStockTake() {
         const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
         if (!confirmTake) return;
-
-        const res = await this.callAPI({
-            action: 'stock_take', boxType: this.currentBoxType, department: this.currentBoxDept, username: this.user.username
-        });
-        
+        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, department: this.currentBoxDept, username: this.user.username });
         if (res && res.status === 'success') {
             alert(res.message);
             this.loadDashboard();
