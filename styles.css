@@ -16,7 +16,7 @@ body { background: var(--bg-blue); color: var(--text-dark); }
 .page.active { display: block; animation: fadeIn 0.4s; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Auth Layout (จัดกึ่งกลางเฉพาะหน้า Login/Register/Forgot) */
+/* Auth Layout */
 .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 40px); }
 .auth-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; border-top: 5px solid var(--primary-green); }
 .auth-logo { width: 80px; margin-bottom: 15px; }
@@ -70,25 +70,19 @@ body { background: var(--bg-blue); color: var(--text-dark); }
 .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ==========================================
-   🖨️ ระบบ Print & Export PDF
-   ========================================== */
+/* Print Logic */
 .print-only { display: none; }
-
 @media print {
     body { background: var(--white); color: #000; }
     .no-print, .navbar, .btn-primary, .btn-outline, .close-btn, #loader { display: none !important; }
-    
     .print-only { display: block; text-align: center; margin-bottom: 20px; }
     .print-only img { height: 60px; margin-bottom: 10px; }
     .print-only h3 { font-size: 16pt; margin-bottom: 5px; color: #000; }
     .print-only p { font-size: 12pt; color: #333; }
-
     .page { padding: 0; margin: 0; max-width: 100%; display: block !important; }
     .table-container { box-shadow: none; border-radius: 0; overflow: visible; }
     .data-table { border-collapse: collapse; width: 100%; }
     .data-table th, .data-table td { border: 1px solid #999; padding: 10px; font-size: 12pt; color: #000; }
     .data-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
-    
     @page { size: A4 portrait; margin: 1.5cm; }
 }
