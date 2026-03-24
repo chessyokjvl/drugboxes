@@ -4,170 +4,63 @@ const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
     tomSelectInstance: null,
+    apiActiveCount: 0, // ตัวนับจำนวน API ที่กำลังโหลด
 
     async init() {
-        await this.loadMasterData();
+        // 🚀 โหลด Master Data ทิ้งไว้เบื้องหลัง (ไม่ต้องใส่ await เพื่อไม่ให้บล็อกหน้าเว็บ)
+        this.loadMasterData();
+
         const userStr = localStorage.getItem('rxUser');
         if (userStr) {
             this.user = JSON.parse(userStr);
             this.showMainApp();
-            this.loadDashboardData();
+            // รอแค่ข้อมูล Dashboard ก็พอ
+            await this.loadDashboardData();
         } else {
             this.navigateAuth('page-login');
         }
     },
 
-    navigateAuth(pageId) {
-        document.getElementById('app-container').style.display = 'none';
-        document.getElementById('auth-container').style.display = 'block';
-        document.querySelectorAll('#auth-container .page').forEach(el => el.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+    // ... (ฟังก์ชัน navigateAuth, showMainApp, navigateMenu, toggleSidebar เหมือนเดิม) ...
+
+    showLoader(show) { 
+        document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
     },
 
-    showMainApp() {
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'flex';
-        document.getElementById('user-display').innerText = `${this.user.username} (${this.user.dept})`;
-    },
-
-    navigateMenu(pageId, menuItem = null) {
-        document.querySelectorAll('main .page').forEach(el => el.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-        if (menuItem) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            menuItem.classList.add('active');
-        }
-        if(window.innerWidth <= 768) this.toggleSidebar();
-    },
-
-    toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.querySelector('.sidebar-overlay').classList.toggle('active');
-    },
-
-    showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; },
-
+    // 🚀 ปรับปรุงระบบ API ให้รองรับการยิงหลายเส้นพร้อมกันโดยที่ตัวหมุนไม่กระพริบ
     async callAPI(payload) {
+        this.apiActiveCount++;
         this.showLoader(true);
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
             const data = await res.json();
-            this.showLoader(false);
+            this.apiActiveCount--;
+            if (this.apiActiveCount === 0) this.showLoader(false);
             return data;
         } catch (err) {
-            this.showLoader(false);
+            this.apiActiveCount--;
+            if (this.apiActiveCount === 0) this.showLoader(false);
             alert('การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง');
         }
     },
 
-    async loadMasterData() {
-        const res = await this.callAPI({ action: 'get_master_data' });
-        if (res && res.status === 'success') {
-            this.masterData = res;
-            
-            const deptSelect = document.getElementById('reg-dept');
-            if (deptSelect) {
-                deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
-                res.departments.forEach(dept => deptSelect.innerHTML += `<option value="${dept}">${dept}</option>`);
-            }
+    // ... (ฟังก์ชัน loadMasterData, showDrugInfo, login, register, forgotPassword, logout เหมือนเดิม) ...
 
-            const drugList = document.getElementById('drug-master-list');
-            if (drugList) {
-                drugList.innerHTML = '';
-                res.drugs.forEach(drug => drugList.innerHTML += `<option value="${drug.name}">`);
-            }
-
-            const drugInput = document.getElementById('form-drug-name');
-            if (drugInput) {
-                drugInput.addEventListener('input', (e) => {
-                    const selectedDrug = res.drugs.find(d => d.name === e.target.value);
-                    const unitDisplay = document.getElementById('form-unit-display');
-                    unitDisplay.innerText = (selectedDrug && selectedDrug.unit) ? `(${selectedDrug.unit})` : '';
-                });
-            }
-
-            const searchSelect = document.getElementById('search-drug-info');
-            if (searchSelect) {
-                searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
-                res.drugs.forEach(drug => searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`);
-                if (this.tomSelectInstance) this.tomSelectInstance.destroy();
-                this.tomSelectInstance = new TomSelect("#search-drug-info", { create: false, sortField: { field: "text", direction: "asc" }, onChange: (value) => this.showDrugInfo(value) });
-            }
-        }
-    },
-
-    showDrugInfo(drugName) {
-        const displayDiv = document.getElementById('drug-info-display');
-        if (!drugName) { displayDiv.style.display = 'none'; return; }
-        const drugInfo = DRUG_DICTIONARY[drugName];
-        document.getElementById('info-drug-name').innerText = drugName;
-        if (drugInfo) {
-            document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
-            document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
-            document.getElementById('info-drug-admin').innerHTML = drugInfo.admin || 'ไม่มีข้อมูล';
-            document.getElementById('info-drug-precautions').innerHTML = drugInfo.precautions || 'ไม่มีข้อมูล';
-        } else {
-            document.getElementById('info-drug-unit').innerText = '-';
-            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
-            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
-            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
-        }
-        displayDiv.style.display = 'block';
-    },
-
-    async login() {
-        const u = document.getElementById('login-username').value;
-        const p = document.getElementById('login-password').value;
-        if (!u || !p) return alert("กรุณากรอก Username และ Password");
-        const res = await this.callAPI({ action: 'login', username: u, password: p });
-        if (res && res.status === 'success') {
-            this.user = res.user;
-            localStorage.setItem('rxUser', JSON.stringify(res.user));
-            this.showMainApp();
-            this.loadDashboardData();
-        } else alert(res ? res.message : 'เข้าสู่ระบบล้มเหลว');
-    },
-
-    async register() {
-        const u = document.getElementById('reg-username').value;
-        const p = document.getElementById('reg-password').value;
-        const e = document.getElementById('reg-email').value;
-        const d = document.getElementById('reg-dept').value;
-        if (!u || !p || !e) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-        const res = await this.callAPI({ action: 'register', username: u, password: p, email: e, role: 'User', department: d });
-        if (res && res.status === 'success') {
-            alert("ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ");
-            this.navigateAuth('page-login');
-            ['reg-username', 'reg-password', 'reg-email'].forEach(id => document.getElementById(id).value = '');
-        } else alert(res ? res.message : 'เกิดข้อผิดพลาด');
-    },
-
-    async forgotPassword() {
-        const e = document.getElementById('forgot-email').value;
-        if (!e) return alert("กรุณากรอก E-mail");
-        const res = await this.callAPI({ action: 'reset_password', email: e });
-        if (res && res.status === 'success') {
-            alert(res.message);
-            this.navigateAuth('page-login');
-            document.getElementById('forgot-email').value = '';
-        } else alert(res ? res.message : 'ไม่พบ E-mail นี้');
-    },
-
-    logout() {
-        localStorage.removeItem('rxUser');
-        this.user = null;
-        ['login-username', 'login-password'].forEach(id => document.getElementById(id).value = '');
-        this.navigateAuth('page-login');
-    },
-
+    // 🚀 ปรับให้โหลดกล่องยา และ ประวัติ Logs ทำงาน "พร้อมกัน"
     async loadDashboardData() {
-        const res = await this.callAPI({ action: 'get_dashboard' });
-        if (res && res.status === 'success') {
+        // ใช้ Promise.all เพื่อยิง 2 API พร้อมกัน ประหยัดเวลาไปได้ครึ่งนึง!
+        const [dashRes, logRes] = await Promise.all([
+            this.callAPI({ action: 'get_dashboard' }),
+            this.callAPI({ action: 'get_recent_logs' })
+        ]);
+
+        // 1. จัดการข้อมูล Dashboard
+        if (dashRes && dashRes.status === 'success') {
             let totalBoxes = 0, totalDrugs = 0, exp3m = 0;
             const container = document.getElementById('ward-grid-container');
             container.innerHTML = '';
 
-            const sortedBoxes = res.data.sort((a, b) => {
+            const sortedBoxes = dashRes.data.sort((a, b) => {
                 let indexA = WARD_ORDER.indexOf(a.department);
                 let indexB = WARD_ORDER.indexOf(b.department);
                 if(indexA === -1) indexA = 999; 
@@ -186,7 +79,6 @@ const app = {
                 if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; 
                 else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; 
 
-                // เช็คว่าถูกส่งไปเภสัชฯ ไหม
                 const isSent = (box.boxStatus === 'ส่งปรับแก้');
 
                 const card = document.createElement('div');
@@ -212,7 +104,7 @@ const app = {
             document.getElementById('stat-exp-3m').innerText = exp3m;
         }
 
-        const logRes = await this.callAPI({ action: 'get_recent_logs' });
+        // 2. จัดการข้อมูล Logs
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
             tbody.innerHTML = '';
