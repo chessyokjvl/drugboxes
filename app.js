@@ -2,13 +2,47 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgu
 // ลำดับการแสดงผล Ward
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
 
+// ==========================================
+// 📚 ฐานข้อมูลคู่มือยา (Local Drug Dictionary)
+// ==========================================
 const DRUG_DICTIONARY = {
-    "Adrenaline 1mg/1ml inj.": {
+    // ------------------------------------
+    // ข้อมูลชุดใหม่ (จากตาราง CPR/Urgency)
+    // ------------------------------------
+    "Adrenaline 1 mg/ml inj.": {
         unit: "Ampoule",
-        prep: `<b>กรณี CPR:</b> 10 mg (10 ml) + NSS/D5W up to 100 ml (Concentration 1:10)\n<br><b>ตัวอย่าง:</b> Adrenaline 10 mg (10 ml) + NSS up to 100 ml (1:10) IV rate 5 ml/hr`,
-        admin: `<b>CPR:</b> 0.5-1mg (5-10 ml) IV stat, ให้ซ้ำ 5 ml IV ทุก 5 นาที\n<b>Unstable bradycardia:</b> เริ่มต้น 1.2 ml/hr (ปรับทีละ 5, Max 6 ml/hr)\n<b>Post-cardiac arrest / Refractory shock:</b> เริ่มต้น 5 ml/hr (ปรับทีละ 5, Max 36 ml/hr)`,
-        precautions: `• ขนาดยาเด็ก: 0.01 mg/Kg/dose\n• <b>ข้อควรระวัง:</b> หากเก็บนอกตู้เย็น อายุยาเหลือ 12 เดือนที่อุณหภูมิห้อง`
+        prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">NSS / D5W</span>`,
+        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest\n<b>ขนาดยา (IV/IO):</b> 1 mg every 3-5 minutes`,
+        precautions: `-`
     },
+    "Amiodarone 150 mg/3ml inj.": {
+        unit: "Ampoule",
+        prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">D5W</span>`,
+        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 300 mg bolus\n- Second dose: 150 mg`,
+        precautions: `-`
+    },
+    "Atropine 0.6 mg/ml inj.": {
+        unit: "Ampoule",
+        prep: `-`,
+        admin: `<b>ข้อบ่งใช้:</b> Bradycardia\n<b>ขนาดยา (IV):</b>\n- First dose: 1 mg bolus\n- Repeat every 3-5 minutes\n- <b>Maximum:</b> 3 mg`,
+        precautions: `-`
+    },
+    "Calcium gluconate 4.5 mEq/ml inj. (10ml)": {
+        unit: "Ampoule",
+        prep: `<b>สารละลายที่ใช้ผสมได้:</b> SWI, D5W, D10W, D5S และ NSS\n\n<span style="color:var(--danger); font-weight:600;">⚠️ ยาที่ห้ามผสมร่วมกัน (Incompatibilities):</span>\nNSS, Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin Phosphate, Amphotericin B`,
+        admin: `<b>ข้อบ่งใช้:</b> Cardiac arrest หรือ Cardiotoxicity จาก hyperkalemia\n<b>ขนาดยา:</b> 0.5-1g (5-10 ml) IV push ช้าๆ (2-5 min)\n- อาจให้ซ้ำถ้าอาการรุนแรง (Max: 3g หรือ 30 ml)\n\n<b>ข้อบ่งใช้:</b> Hypocalcaemia\n<b>ขนาดยา:</b> IV 2-15 g/24 hr แบบ continuous infusion หรือแบ่งให้ 4 ครั้ง\n\n<b>การบริหารยา:</b> Direct IV (over 5-10 min) หรือ Infusion (rate 50 mg/ml นานกว่า 1 hr หรือไม่เกิน 120-240 mg/kg/hr หรือ 0.6-1.2 mEq/kg/hr)`,
+        precautions: `• Calcium gluconate 1 g (เท่ากับ 10% calcium gluconate Injection 10 mL) เจือจางในสารน้ำที่เข้ากันได้อย่างน้อย 50 mL\n• ความเข้มข้นสูงสุดสำหรับผู้ป่วยเด็ก คือ ไม่เกิน 50 mg/mL`
+    },
+    "Lidocaine 2% inj. (2ml)": {
+        unit: "Ampoule",
+        prep: `<b>สารละลายที่ใช้ผสมได้:</b> D5W, LRS, NSS, NSS/2, D5S และ D5S/2`,
+        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 1-1.5 mg/kg\n- Second dose: 0.5-0.75 mg/kg\n\n<b>การบริหารยา:</b> Loading dose 1-1.5 mg/kg IV slowly push สามารถให้ซ้ำได้อีกครั้งละ 0.5-0.75 mg/kg ทุก 10 นาที (ขนาดยารวมกันไม่เกิน 3 mg/kg) และให้ยาต่อไปด้วยวิธี IV continuous infusion ต่อไปด้วยอัตราเร็ว 1-4 mg/min`,
+        precautions: `-`
+    },
+
+    // ------------------------------------
+    // ข้อมูลชุดเดิม (อ้างอิงเผื่อไว้)
+    // ------------------------------------
     "Norepinephrine": {
         unit: "Ampoule",
         prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)\n<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
@@ -21,18 +55,6 @@ const DRUG_DICTIONARY = {
         admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr\n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr\n<b>Max dose:</b> 72 ml/hr`,
         precautions: `• <b>ข้อควรระวัง:</b> ระวังภาวะ MI และ Tachyarrhythmia`
     },
-    "Amiodarone 50 mg/ml inj. (3ml)": {
-        unit: "Ampoule",
-        prep: `<b>AF / Stable VT:</b> 150 mg (3 ml) + D5W up to 100 ml\n<b>ตัวอย่างต่อเนื่อง:</b> 900 mg (16 ml) + D5W 500 ml\n<br><b>CPR Box:</b> 150 mg (3 ml) + D5W up to 100 ml (Concentration 15:10)`,
-        admin: `<b>Dose แรก:</b> IV drip in 30 mins (Rate 200 ml/hr)\n<b>Dose ต่อเนื่อง:</b> จากนั้น 900 mg IV drip in 24 hr`,
-        precautions: `• <span style="color:red; font-weight:bold;">ห้ามให้ใน case QT prolonged</span>\n• แนะนำให้เก็บ Thyroid Function Test (TFT) ก่อนให้ยา`
-    },
-    "Lidocaine": {
-        unit: "Vial/Ampoule",
-        prep: `<b>Monomorphic VT:</b> 2% Lidocaine 60 mg (3 ml) หรือ 80 mg (4 ml)\n<b>Maintenance:</b> 400 mg (20 ml) in NSS 100 ml`,
-        admin: `<b>Dose แรก:</b> Slowly push ช้าๆ 5-10 นาที (สามารถ repeat dose ทุก 10-15 นาที)\n<b>Maintenance:</b> 400 mg in NSS 100 ml IV rate 15 ml/hr`,
-        precautions: `• ระวังเรื่องการให้เร็วเกินไป อาจเกิดพิษจาก Lidocaine (Neurotoxicity, Arrhythmia)`
-    },
     "Magnesium sulfate (MgSO4)": {
         unit: "Ampoule",
         prep: `<b>Stable torsade de pointes:</b>\n<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml\n<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
@@ -40,7 +62,6 @@ const DRUG_DICTIONARY = {
         precautions: `• เฝ้าระวังระดับ Magnesium ในเลือด, Deep tendon reflexes (DTR) และอัตราการหายใจ`
     }
 };
-
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null,
     masterData: { departments: [], drugs: [] },
