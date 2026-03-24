@@ -12,7 +12,6 @@ const app = {
         }
     },
 
-    // แก้ไข Navigate ให้ใช้ CSS Class จัดการอย่างเดียว ป้องกันการทับซ้อน
     navigate(pageId) {
         document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
@@ -29,7 +28,8 @@ const app = {
             return data;
         } catch (err) {
             this.showLoader(false);
-            alert('การเชื่อมต่อขัดข้อง');
+            alert('การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง');
+            console.error(err);
         }
     },
 
@@ -85,11 +85,13 @@ const app = {
         document.getElementById('user-display').innerText = `👨‍⚕️ ผู้ใช้: ${this.user.username} (${this.user.role})`;
         this.navigate('page-dashboard');
         
-        // 1. โหลดข้อมูลกล่องยา
+        // โหลดข้อมูลกล่องยา
         const res = await this.callAPI({ action: 'get_dashboard' });
         if (res && res.status === 'success') {
             const container = document.getElementById('dashboard-container');
             container.innerHTML = '';
+            if (res.data.length === 0) container.innerHTML = '<p style="color:#666; width:100%; text-align:center;">ยังไม่มีข้อมูลกล่องยาในระบบ</p>';
+            
             res.data.forEach(box => {
                 const isWarning = box.status === 'warning';
                 const card = document.createElement('div');
@@ -107,7 +109,7 @@ const app = {
             });
         }
 
-        // 2. โหลดประวัติ Logs
+        // โหลดประวัติ Logs
         const logRes = await this.callAPI({ action: 'get_recent_logs' });
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
@@ -116,8 +118,8 @@ const app = {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">ยังไม่มีประวัติ</td></tr>';
             } else {
                 logRes.data.forEach(log => {
-                    const actColor = log.action === 'INSERT' ? 'var(--primary-green)' : '#f39c12';
-                    const actText = log.action === 'INSERT' ? 'เพิ่มยาใหม่' : 'อัปเดตข้อมูล';
+                    const actColor = log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12');
+                    const actText = log.action === 'INSERT' ? 'เพิ่มยาใหม่' : (log.action === 'STOCK_TAKE' ? 'Re-check' : 'อัปเดตข้อมูล');
                     tbody.innerHTML += `
                         <tr>
                             <td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td>
@@ -135,26 +137,23 @@ const app = {
     async openBoxDetail(boxId, dept, type) {
         this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type;
         document.getElementById('detail-title').innerText = `${type} - ${dept}`;
-        this.navigate('page-box-detail');
         
-        // ---- อัปเดตข้อมูลสำหรับตอนสั่ง Print ----
+        // ข้อมูลส่วน Print
         document.getElementById('print-dept-name').innerText = dept;
         document.getElementById('print-box-name').innerText = type;
         document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
+
+        this.navigate('page-box-detail');
         
-        // 1. จัดการปุ่ม "เพิ่มรายการ" (เฉพาะ Admin/God Admin)
+        // สิทธิ์การเห็นปุ่มต่างๆ
         const btnAdd = document.getElementById('btn-add-drug');
         btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
         btnAdd.onclick = () => this.openDrugModal();
 
-        // 2. จัดการปุ่ม "Stock Take" (เฉพาะ Admin หรือ User ที่อยู่แผนกตรงกับกล่องยา)
         const btnStockTake = document.getElementById('btn-stock-take');
-        if (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) {
-            btnStockTake.style.display = 'block';
-        } else {
-            btnStockTake.style.display = 'none';
-        }
+        btnStockTake.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) ? 'block' : 'none';
 
+        // โหลดข้อมูลยา
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
             const tbody = document.getElementById('detail-tbody');
@@ -176,9 +175,7 @@ const app = {
                         <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
                         <td>${item.qty}</td>
                         <td style="font-size: 0.85rem; color: #666;">${new Date(item.lastUpdate).toLocaleDateString('th-TH')}</td>
-                        <td class="no-print">
-    ${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}
-</td>
+                        <td class="no-print">${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}</td>
                     </tr>
                 `;
             });
@@ -230,27 +227,20 @@ const app = {
             this.closeModal();
             this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType);
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
-    }
+    },
+
     async doStockTake() {
-        // ถามเพื่อความแน่ใจก่อนบันทึก
         const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
         if (!confirmTake) return;
 
-        const payload = {
-            action: 'stock_take',
-            boxType: this.currentBoxType,
-            department: this.currentBoxDept,
-            username: this.user.username
-        };
-
-        const res = await this.callAPI(payload);
+        const res = await this.callAPI({
+            action: 'stock_take', boxType: this.currentBoxType, department: this.currentBoxDept, username: this.user.username
+        });
+        
         if (res && res.status === 'success') {
             alert(res.message);
-            // เมื่อยืนยันเสร็จ ให้เด้งกลับไปหน้า Dashboard เพื่อให้เห็นประวัติอัปเดตใหม่ทันที
             this.loadDashboard();
-        } else {
-            alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
-        }
+        } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
     }
 };
 
