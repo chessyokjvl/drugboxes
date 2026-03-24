@@ -1,69 +1,16 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
-// ลำดับการแสดงผล Ward
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
 
-// ==========================================
-// 📚 ฐานข้อมูลคู่มือยา (Local Drug Dictionary)
-// ==========================================
 const DRUG_DICTIONARY = {
-    // ------------------------------------
-    // ข้อมูลชุดใหม่ (จากตาราง CPR/Urgency)
-    // ------------------------------------
-    "Adrenaline 1 mg/ml inj.": {
-        unit: "Ampoule",
-        prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">NSS / D5W</span>`,
-        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest\n<b>ขนาดยา (IV/IO):</b> 1 mg every 3-5 minutes`,
-        precautions: `-`
-    },
-    "Amiodarone 150 mg/3ml inj.": {
-        unit: "Ampoule",
-        prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">D5W</span>`,
-        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 300 mg bolus\n- Second dose: 150 mg`,
-        precautions: `-`
-    },
-    "Atropine 0.6 mg/ml inj.": {
-        unit: "Ampoule",
-        prep: `-`,
-        admin: `<b>ข้อบ่งใช้:</b> Bradycardia\n<b>ขนาดยา (IV):</b>\n- First dose: 1 mg bolus\n- Repeat every 3-5 minutes\n- <b>Maximum:</b> 3 mg`,
-        precautions: `-`
-    },
-    "Calcium gluconate 4.5 mEq/ml inj. (10ml)": {
-        unit: "Ampoule",
-        prep: `<b>สารละลายที่ใช้ผสมได้:</b> SWI, D5W, D10W, D5S และ NSS\n\n<span style="color:var(--danger); font-weight:600;">⚠️ ยาที่ห้ามผสมร่วมกัน (Incompatibilities):</span>\nNSS, Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin Phosphate, Amphotericin B`,
-        admin: `<b>ข้อบ่งใช้:</b> Cardiac arrest หรือ Cardiotoxicity จาก hyperkalemia\n<b>ขนาดยา:</b> 0.5-1g (5-10 ml) IV push ช้าๆ (2-5 min)\n- อาจให้ซ้ำถ้าอาการรุนแรง (Max: 3g หรือ 30 ml)\n\n<b>ข้อบ่งใช้:</b> Hypocalcaemia\n<b>ขนาดยา:</b> IV 2-15 g/24 hr แบบ continuous infusion หรือแบ่งให้ 4 ครั้ง\n\n<b>การบริหารยา:</b> Direct IV (over 5-10 min) หรือ Infusion (rate 50 mg/ml นานกว่า 1 hr หรือไม่เกิน 120-240 mg/kg/hr หรือ 0.6-1.2 mEq/kg/hr)`,
-        precautions: `• Calcium gluconate 1 g (เท่ากับ 10% calcium gluconate Injection 10 mL) เจือจางในสารน้ำที่เข้ากันได้อย่างน้อย 50 mL\n• ความเข้มข้นสูงสุดสำหรับผู้ป่วยเด็ก คือ ไม่เกิน 50 mg/mL`
-    },
-    "Lidocaine 2% inj. (2ml)": {
-        unit: "Ampoule",
-        prep: `<b>สารละลายที่ใช้ผสมได้:</b> D5W, LRS, NSS, NSS/2, D5S และ D5S/2`,
-        admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 1-1.5 mg/kg\n- Second dose: 0.5-0.75 mg/kg\n\n<b>การบริหารยา:</b> Loading dose 1-1.5 mg/kg IV slowly push สามารถให้ซ้ำได้อีกครั้งละ 0.5-0.75 mg/kg ทุก 10 นาที (ขนาดยารวมกันไม่เกิน 3 mg/kg) และให้ยาต่อไปด้วยวิธี IV continuous infusion ต่อไปด้วยอัตราเร็ว 1-4 mg/min`,
-        precautions: `-`
-    },
-
-    // ------------------------------------
-    // ข้อมูลชุดเดิม (อ้างอิงเผื่อไว้)
-    // ------------------------------------
-    "Norepinephrine": {
-        unit: "Ampoule",
-        prep: `<b>Shock/Hypotension:</b> 1.6 mg (1.6 ml) + D5W up to 100 ml (Concentration 4:250)\n<br><b>ตัวอย่าง:</b> Norepinephrine 1.6 mg (1.6 ml) + D5W up to 100 ml IV rate 5 ml/hr`,
-        admin: `<b>IV rate:</b> เริ่มต้น 5 ml/hr \n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 8 ml/hr\n<b>Max dose:</b> 450 ml/hr`,
-        precautions: `• <b>ข้อควรระวัง:</b> ระวัง smoking - limb ischemia (ภาวะขาดเลือดที่แขนขา)`
-    },
-    "Dopamine": {
-        unit: "Ampoule",
-        prep: `<b>Unstable bradycardia:</b> 100 mg (4 ml) + NSS up to 100 ml (Concentration 1:1)\n<br><b>ตัวอย่าง:</b> Dopamine 100 mg (4 ml) + NSS up to 100 ml (1:1) IV rate 20 ml/hr`,
-        admin: `<b>IV rate:</b> เริ่มต้น 20 ml/hr\n<b>การปรับ Dose:</b> ปรับเพิ่มทีละ 10 ml/hr\n<b>Max dose:</b> 72 ml/hr`,
-        precautions: `• <b>ข้อควรระวัง:</b> ระวังภาวะ MI และ Tachyarrhythmia`
-    },
-    "Magnesium sulfate (MgSO4)": {
-        unit: "Ampoule",
-        prep: `<b>Stable torsade de pointes:</b>\n<b>Dose 1:</b> 50% MgSO4 2 gms (4 ml) + NSS up to 100 ml\n<b>Dose 2:</b> 50% MgSO4 4 gms (8 ml) + NSS up to 100 ml`,
-        admin: `<b>Dose 1:</b> Drip in 15 mins (IV rate 400 ml/hr)\n<b>Dose 2 (then):</b> Drip in 4 hrs (IV rate 25 ml/hr)`,
-        precautions: `• เฝ้าระวังระดับ Magnesium ในเลือด, Deep tendon reflexes (DTR) และอัตราการหายใจ`
-    }
+    "Adrenaline 1 mg/ml inj.": { unit: "Ampoule", prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">NSS / D5W</span>`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest\n<b>ขนาดยา (IV/IO):</b> 1 mg every 3-5 minutes`, precautions: `-` },
+    "Amiodarone 150 mg/3ml inj.": { unit: "Ampoule", prep: `<b>สารละลายที่เข้ากันได้:</b> <span style="color:var(--danger); font-weight:600;">D5W</span>`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 300 mg bolus\n- Second dose: 150 mg`, precautions: `-` },
+    "Atropine 0.6 mg/ml inj.": { unit: "Ampoule", prep: `-`, admin: `<b>ข้อบ่งใช้:</b> Bradycardia\n<b>ขนาดยา (IV):</b>\n- First dose: 1 mg bolus\n- Repeat every 3-5 minutes\n- <b>Maximum:</b> 3 mg`, precautions: `-` },
+    "Calcium gluconate 4.5 mEq/ml inj. (10ml)": { unit: "Ampoule", prep: `<b>สารละลายที่ใช้ผสมได้:</b> SWI, D5W, D10W, D5S และ NSS\n\n<span style="color:var(--danger); font-weight:600;">⚠️ ยาที่ห้ามผสมร่วมกัน (Incompatibilities):</span>\nNSS, Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin Phosphate, Amphotericin B`, admin: `<b>ข้อบ่งใช้:</b> Cardiac arrest หรือ Cardiotoxicity จาก hyperkalemia\n<b>ขนาดยา:</b> 0.5-1g (5-10 ml) IV push ช้าๆ (2-5 min)\n- อาจให้ซ้ำถ้าอาการรุนแรง (Max: 3g หรือ 30 ml)\n\n<b>ข้อบ่งใช้:</b> Hypocalcaemia\n<b>ขนาดยา:</b> IV 2-15 g/24 hr แบบ continuous infusion หรือแบ่งให้ 4 ครั้ง\n\n<b>การบริหารยา:</b> Direct IV (over 5-10 min) หรือ Infusion (rate 50 mg/ml นานกว่า 1 hr หรือไม่เกิน 120-240 mg/kg/hr หรือ 0.6-1.2 mEq/kg/hr)`, precautions: `• Calcium gluconate 1 g (เท่ากับ 10% calcium gluconate Injection 10 mL) เจือจางในสารน้ำที่เข้ากันได้อย่างน้อย 50 mL\n• ความเข้มข้นสูงสุดสำหรับผู้ป่วยเด็ก คือ ไม่เกิน 50 mg/mL` },
+    "Lidocaine 2% inj. (2ml)": { unit: "Ampoule", prep: `<b>สารละลายที่ใช้ผสมได้:</b> D5W, LRS, NSS, NSS/2, D5S และ D5S/2`, admin: `<b>ข้อบ่งใช้:</b> Cardiac Arrest (refractory VF/pVT)\n<b>ขนาดยา (IV/IO):</b>\n- First dose: 1-1.5 mg/kg\n- Second dose: 0.5-0.75 mg/kg\n\n<b>การบริหารยา:</b> Loading dose 1-1.5 mg/kg IV slowly push สามารถให้ซ้ำได้อีกครั้งละ 0.5-0.75 mg/kg ทุก 10 นาที (ขนาดยารวมกันไม่เกิน 3 mg/kg) และให้ยาต่อไปด้วยวิธี IV continuous infusion ต่อไปด้วยอัตราเร็ว 1-4 mg/min`, precautions: `-` }
 };
+
 const app = {
-    user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null,
+    user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
     tomSelectInstance: null,
 
@@ -89,7 +36,7 @@ const app = {
     showMainApp() {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
-        document.getElementById('user-display').innerText = `${this.user.username}`;
+        document.getElementById('user-display').innerText = `${this.user.username} (${this.user.dept})`;
     },
 
     navigateMenu(pageId, menuItem = null) {
@@ -119,7 +66,6 @@ const app = {
         } catch (err) {
             this.showLoader(false);
             alert('การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง');
-            console.error(err);
         }
     },
 
@@ -153,13 +99,8 @@ const app = {
             if (searchSelect) {
                 searchSelect.innerHTML = '<option value="">พิมพ์ชื่อยาเพื่อค้นหา...</option>';
                 res.drugs.forEach(drug => searchSelect.innerHTML += `<option value="${drug.name}">${drug.name}</option>`);
-                
                 if (this.tomSelectInstance) this.tomSelectInstance.destroy();
-                this.tomSelectInstance = new TomSelect("#search-drug-info", {
-                    create: false,
-                    sortField: { field: "text", direction: "asc" },
-                    onChange: (value) => this.showDrugInfo(value)
-                });
+                this.tomSelectInstance = new TomSelect("#search-drug-info", { create: false, sortField: { field: "text", direction: "asc" }, onChange: (value) => this.showDrugInfo(value) });
             }
         }
     },
@@ -167,10 +108,8 @@ const app = {
     showDrugInfo(drugName) {
         const displayDiv = document.getElementById('drug-info-display');
         if (!drugName) { displayDiv.style.display = 'none'; return; }
-        
         const drugInfo = DRUG_DICTIONARY[drugName];
         document.getElementById('info-drug-name').innerText = drugName;
-        
         if (drugInfo) {
             document.getElementById('info-drug-unit').innerText = drugInfo.unit || '-';
             document.getElementById('info-drug-prep').innerHTML = drugInfo.prep || 'ไม่มีข้อมูล';
@@ -178,9 +117,9 @@ const app = {
             document.getElementById('info-drug-precautions').innerHTML = drugInfo.precautions || 'ไม่มีข้อมูล';
         } else {
             document.getElementById('info-drug-unit').innerText = '-';
-            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
-            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
-            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ยังไม่ได้อัปเดตข้อมูลคู่มือสำหรับยานี้</i></span>';
+            document.getElementById('info-drug-prep').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
+            document.getElementById('info-drug-admin').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
+            document.getElementById('info-drug-precautions').innerHTML = '<span style="color:#999;"><i>ไม่มีข้อมูล</i></span>';
         }
         displayDiv.style.display = 'block';
     },
@@ -230,9 +169,6 @@ const app = {
         this.navigateAuth('page-login');
     },
 
-    // ==========================================
-    // 📊 ฟังก์ชันโหลดหน้า Dashboard & Wards Grid
-    // ==========================================
     async loadDashboardData() {
         const res = await this.callAPI({ action: 'get_dashboard' });
         if (res && res.status === 'success') {
@@ -240,7 +176,6 @@ const app = {
             const container = document.getElementById('ward-grid-container');
             container.innerHTML = '';
 
-            // 1. เรียงลำดับกล่องตาม WARD_ORDER ที่กำหนดไว้
             const sortedBoxes = res.data.sort((a, b) => {
                 let indexA = WARD_ORDER.indexOf(a.department);
                 let indexB = WARD_ORDER.indexOf(b.department);
@@ -249,81 +184,77 @@ const app = {
                 return indexA - indexB;
             });
 
-            // 2. วาดกล่องยาและเช็คสีตามประเภทกล่อง
             sortedBoxes.forEach(box => {
                 totalBoxes++;
                 totalDrugs += box.totalDrugs;
                 exp3m += box.expiringSoon;
                 
                 const isWarning = box.expiringSoon > 0;
-                
-                // 🎨 กำหนดสีกล่องตามคำศัพท์ใน BoxType
-                let boxColorClass = 'box-ward'; // Default สีเขียว
+                let boxColorClass = 'box-ward'; 
                 const typeStr = box.boxType.toLowerCase();
-                if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; // สีแดง
-                else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; // สีส้ม
-                else if (typeStr.includes('stock')) boxColorClass = 'box-ward'; // สีเขียว
+                if (typeStr.includes('cpr')) boxColorClass = 'box-cpr'; 
+                else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; 
+
+                // เช็คว่าถูกส่งไปเภสัชฯ ไหม
+                const isSent = (box.boxStatus === 'ส่งปรับแก้');
 
                 const card = document.createElement('div');
                 card.className = `box-card ${boxColorClass} ${isWarning ? 'warning' : ''}`;
                 card.innerHTML = `
-                    <div class="box-title">${box.boxName}</div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="box-title">${box.boxName}</div>
+                        ${isSent ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem;">รอเภสัชฯ</span>` : ''}
+                    </div>
                     <div style="margin-bottom: 8px;"><span class="box-badge">${box.boxType}</span></div>
                     <div style="color: #666; margin: 10px 0;"><i class="fas fa-clinic-medical"></i> ${box.department}</div>
                     <div style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px;">
                         รายการยา: <b>${box.totalDrugs}</b><br>
-                        ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ สถานะปกติ</span>`}
+                        ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ ยาไม่หมดอายุ</span>`}
                     </div>
                 `;
-                card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName);
+                card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName, box.boxStatus);
                 container.appendChild(card);
             });
 
-            // อัปเดตตัวเลขหน้า Dashboard
             document.getElementById('stat-total-boxes').innerText = totalBoxes;
             document.getElementById('stat-total-drugs').innerText = totalDrugs;
             document.getElementById('stat-exp-3m').innerText = exp3m;
         }
 
-        // โหลดประวัติ Logs มาแสดงตาราง
         const logRes = await this.callAPI({ action: 'get_recent_logs' });
         if (logRes && logRes.status === 'success') {
             const tbody = document.getElementById('dashboard-logs-tbody');
             tbody.innerHTML = '';
-            if (logRes.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">ยังไม่มีประวัติ</td></tr>';
-            } else {
-                logRes.data.forEach(log => {
-                    const actColor = log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12');
-                    const actText = log.action === 'INSERT' ? 'เพิ่มยาใหม่' : (log.action === 'STOCK_TAKE' ? 'Re-check' : 'อัปเดตข้อมูล');
-                    tbody.innerHTML += `
-                        <tr>
-                            <td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td>
-                            <td><span style="background: ${actColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${actText}</span></td>
-                            <td>${log.details}</td>
-                            <td style="font-weight: 500;"><i class="fas fa-user-edit" style="color: #ccc;"></i> ${log.user}</td>
-                        </tr>
-                    `;
-                });
-            }
+            if (logRes.data.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">ยังไม่มีประวัติ</td></tr>';
+            else logRes.data.forEach(log => {
+                const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12'));
+                tbody.innerHTML += `<tr><td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td><td><span style="background: ${actColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${log.action}</span></td><td>${log.details}</td><td style="font-weight: 500;">${log.user}</td></tr>`;
+            });
         }
     },
 
-    async openBoxDetail(boxId, dept, type, boxName) {
-        this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName;
+    async openBoxDetail(boxId, dept, type, boxName, boxStatus) {
+        this.currentBoxId = boxId; this.currentBoxDept = dept; this.currentBoxType = type; this.currentBoxName = boxName; this.currentBoxStatus = boxStatus;
+        
+        // ตรวจสอบสิทธิ์ว่าเป็นเภสัชฯ หรือเป็นเจ้าของตึก
+        const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
+        const isOwner = (this.user.dept === dept);
+        const canEdit = isPharmacy || isOwner;
+
         document.getElementById('detail-title').innerText = `${boxName} (${type})`;
         document.getElementById('print-dept-name').innerText = dept;
         document.getElementById('print-box-name').innerText = boxName;
-        document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
         
         this.navigateMenu('page-box-detail');
         
-        const btnAdd = document.getElementById('btn-add-drug');
-        btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
-        btnAdd.onclick = () => this.openDrugModal();
-
-        const btnStockTake = document.getElementById('btn-stock-take');
-        btnStockTake.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === dept) ? 'block' : 'none';
+        // 📌 ซ่อน/แสดง ปุ่มด้านบนตามสิทธิ์
+        document.getElementById('btn-add-drug').style.display = canEdit ? 'block' : 'none';
+        
+        // เจ้าของกล่องที่ไม่ใช่เภสัช สามารถกดส่งให้เภสัชได้
+        document.getElementById('btn-send-pharma').style.display = (!isPharmacy && isOwner && boxStatus !== 'ส่งปรับแก้') ? 'block' : 'none';
+        
+        // เภสัชสามารถกดเคลียร์สถานะได้ ถ้ากล่องนั้นโดนส่งมา
+        document.getElementById('btn-clear-status').style.display = (isPharmacy && boxStatus === 'ส่งปรับแก้') ? 'block' : 'none';
 
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
@@ -339,18 +270,51 @@ const app = {
                 const isExpiring = expDate <= threeMonths;
                 const itemJson = encodeURIComponent(JSON.stringify(item));
                 
+                // สร้างปุ่มจัดการ (มีทั้งแก้ไข และ ยืนยันถูกต้องรายตัว)
+                let actionButtons = '-';
+                if (canEdit) {
+                    actionButtons = `
+                        <button class="btn-outline no-print" style="margin-right:5px; border-color:#27ae60; color:#27ae60;" onclick="app.verifyItem('${item.itemID}')" title="ตรวจสอบว่าถูกต้อง"><i class="fas fa-check"></i></button>
+                        <button class="btn-outline no-print" onclick="app.openDrugModal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>
+                    `;
+                }
+                
                 tbody.innerHTML += `
                     <tr>
-                        <td style="font-weight: 500;">${item.drugName}</td>
+                        <td>
+                            <b style="font-weight: 500;">${item.drugName}</b><br>
+                            <span style="font-size:0.75rem; color:#999;">อัปเดต: ${new Date(item.lastUpdate).toLocaleDateString('th-TH')} | โดย: ${item.verifiedBy || '-'}</span>
+                        </td>
                         <td>${item.lotNumber}</td>
                         <td><span style="font-size:0.85rem; color:var(--text-dark); background:#eee; padding:3px 8px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
                         <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
                         <td>${item.qty}</td>
-                        <td class="no-print">${(this.user.role === 'God Admin' || this.user.role === 'Admin') ? `<button class="btn-outline" style="color:var(--text-dark); border-color:#ccc; padding: 5px 10px;" onclick="app.openDrugModal('${itemJson}')"><i class="fas fa-edit"></i> แก้ไข</button>` : '-'}</td>
+                        <td class="no-print" style="white-space: nowrap;">${actionButtons}</td>
                     </tr>
                 `;
             });
         }
+    },
+
+    // 📌 ยืนยันความถูกต้องรายตัว
+    async verifyItem(itemId) {
+        const res = await this.callAPI({ action: 'verify_item', itemID: itemId, username: this.user.username });
+        if (res && res.status === 'success') {
+            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
+        } else alert('เกิดข้อผิดพลาดในการบันทึก');
+    },
+
+    // 📌 เปลี่ยนสถานะกล่อง (ส่งเภสัช / เคลียร์)
+    async updateBoxStatus(status) {
+        let confirmMsg = status === 'ส่งปรับแก้' ? "ต้องการส่งกล่องนี้ให้ฝ่ายเภสัชกรรมปรับแก้ใช่หรือไม่?" : "ยืนยันการเคลียร์สถานะว่าปรับแก้เรียบร้อยแล้ว?";
+        if (!confirm(confirmMsg)) return;
+
+        const res = await this.callAPI({ action: 'update_box_status', boxName: this.currentBoxName, department: this.currentBoxDept, status: status, username: this.user.username });
+        if (res && res.status === 'success') {
+            alert(res.message);
+            this.loadDashboardData();
+            this.navigateMenu('page-wards'); // กลับไปหน้าตารางวอร์ด
+        } else alert('เกิดข้อผิดพลาด');
     },
 
     openDrugModal(itemJsonEncoded = null) {
@@ -366,13 +330,14 @@ const app = {
             document.getElementById('form-storage').value = item.storageLoc || 'ในกล่อง (In Box)';
             document.getElementById('form-unit-display').innerText = ''; 
             document.getElementById('form-is-opened').checked = false; 
-            document.getElementById('form-verifier').value = '';
+            document.getElementById('form-verifier').value = this.user.username; // ดึงชื่อ User อัตโนมัติ
         } else {
             document.getElementById('modal-title').innerText = "เพิ่มรายการยาใหม่";
-            ['item-id', 'drug-name', 'lot', 'qty', 'exp', 'verifier'].forEach(id => document.getElementById('form-' + id).value = '');
+            ['item-id', 'drug-name', 'lot', 'qty', 'exp'].forEach(id => document.getElementById('form-' + id).value = '');
             document.getElementById('form-storage').value = 'ในกล่อง (In Box)';
             document.getElementById('form-unit-display').innerText = '';
             document.getElementById('form-is-opened').checked = false;
+            document.getElementById('form-verifier').value = this.user.username; // ดึงชื่อ User อัตโนมัติ
         }
     },
 
@@ -393,27 +358,14 @@ const app = {
             verifiedBy: document.getElementById('form-verifier').value
         };
 
-        if (!payload.drugName || (!payload.expireDate && !payload.isOpened) || !payload.verifiedBy) {
-            return alert("กรุณากรอก ชื่อยา, วันหมดอายุ และ ชื่อเภสัชกร");
-        }
+        if (!payload.drugName || (!payload.expireDate && !payload.isOpened) || !payload.verifiedBy) return alert("กรุณากรอก ชื่อยา, วันหมดอายุ และ ชื่อผู้ตรวจสอบ");
 
         const res = await this.callAPI(payload);
         if (res && res.status === 'success') {
             alert(res.message);
             this.closeModal();
-            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName);
+            this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
         } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่ทราบสาเหตุ'));
-    },
-
-    async doStockTake() {
-        const confirmTake = confirm("คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?");
-        if (!confirmTake) return;
-        const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept, username: this.user.username });
-        if (res && res.status === 'success') {
-            alert(res.message);
-            this.loadDashboardData();
-            this.navigateMenu('page-wards'); // เด้งกลับไปหน้ากล่องยา
-        } else alert('เกิดข้อผิดพลาด: ' + (res ? res.message : 'ไม่สามารถเชื่อมต่อได้'));
     }
 };
 
