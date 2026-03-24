@@ -137,6 +137,11 @@ const app = {
         document.getElementById('detail-title').innerText = `${type} - ${dept}`;
         this.navigate('page-box-detail');
         
+        // ---- อัปเดตข้อมูลสำหรับตอนสั่ง Print ----
+        document.getElementById('print-dept-name').innerText = dept;
+        document.getElementById('print-box-name').innerText = type;
+        document.getElementById('print-date').innerText = new Date().toLocaleString('th-TH');
+        
         // 1. จัดการปุ่ม "เพิ่มรายการ" (เฉพาะ Admin/God Admin)
         const btnAdd = document.getElementById('btn-add-drug');
         btnAdd.style.display = (this.user.role === 'God Admin' || this.user.role === 'Admin') ? 'block' : 'none';
