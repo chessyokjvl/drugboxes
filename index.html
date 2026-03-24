@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Life Saving Stock | รพ.จิตเวชเลยราชนครินทร์</title>
+    <title>JVL Drug Boxes | รพ.จิตเวชเลยราชนครินทร์</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
@@ -15,10 +15,10 @@
         <div class="auth-wrapper">
             <div class="auth-card">
                 <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" class="auth-logo">
-                <h2 class="auth-title">Life Saving Stock</h2>
-                <p class="auth-subtitle">ระบบติดตามคลังยา</p>
+                <h2 class="auth-title">JVL Drug Boxes</h2>
+                <p class="auth-subtitle">ระบบติดตามยาสต็อกวอร์ด</p>
                 <div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div>
-                <div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control" onkeypress="if(event.key === 'Enter') app.login()"></div>
                 <button class="btn-primary" onclick="app.login()">เข้าสู่ระบบ</button>
                 <div style="display: flex; justify-content: space-between; margin-top: 20px;">
                     <span class="link-text" onclick="app.navigate('page-forgot')">ลืมรหัสผ่าน?</span>
@@ -69,7 +69,7 @@
 
     <div id="page-dashboard" class="page">
         <nav class="navbar">
-            <div class="nav-brand"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo"> Life Saving Stock</div>
+            <div class="nav-brand"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo"> JVL Drug Boxes</div>
             <div>
                 <span id="user-display" style="margin-right: 15px; font-size: 0.9rem;"></span>
                 <button class="btn-outline" onclick="app.logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
@@ -94,7 +94,7 @@
         <nav class="navbar no-print">
             <div class="nav-brand" onclick="app.navigate('page-dashboard')" style="cursor:pointer;"><i class="fas fa-arrow-left"></i> กลับไป Dashboard</div>
         </nav>
-        
+
         <div id="print-header" class="print-only">
             <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo">
             <h3>รายงานสถานะคลังยา โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
@@ -106,28 +106,14 @@
         <div class="header-action no-print">
             <h2 id="detail-title">รายการยา</h2>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn-outline" style="color: var(--primary-green); border-color: var(--primary-green); width: auto;" onclick="window.print()">
-                    <i class="fas fa-print"></i> Print / PDF
-                </button>
-                <button class="btn-primary" id="btn-stock-take" style="background: #27ae60; width: auto;" onclick="app.doStockTake()">
-                    <i class="fas fa-check-double"></i> Stock Take
-                </button>
-                <button class="btn-primary" id="btn-add-drug" style="width: auto;">
-                    <i class="fas fa-plus"></i> เพิ่มรายการ
-                </button>
+                <button class="btn-outline" style="color: var(--primary-green); border-color: var(--primary-green); width: auto;" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
+                <button class="btn-primary" id="btn-stock-take" style="background: #27ae60; width: auto;" onclick="app.doStockTake()"><i class="fas fa-check-double"></i> Stock Take</button>
+                <button class="btn-primary" id="btn-add-drug" style="width: auto;"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
             </div>
         </div>
-        
         <div class="table-container">
             <table class="data-table">
                 <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>อัปเดตล่าสุด</th><th class="no-print">จัดการ</th></tr></thead>
-                <tbody id="detail-tbody"></tbody>
-            </table>
-        </div>
-    </div>
-        <div class="table-container">
-            <table class="data-table">
-                <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>วันหมดอายุ</th><th>จำนวน</th><th>อัปเดตล่าสุด</th><th>จัดการ</th></tr></thead>
                 <tbody id="detail-tbody"></tbody>
             </table>
         </div>
@@ -146,7 +132,7 @@
             </div>
             <div class="form-group"><label>วันหมดอายุที่ระบุข้างขวด/แผง</label><input type="date" id="form-exp" class="form-control"></div>
             <div class="form-group special-condition">
-                <label style="display: flex; align-items: center; cursor: pointer; color: var(--danger); font-weight: 500; margin-bottom:0;">
+                <label style="display: flex; align-items: center; cursor: pointer; color: var(--danger); font-weight: 500; margin-bottom: 0;">
                     <input type="checkbox" id="form-is-opened" style="margin-right: 10px; width: 18px; height: 18px;"> 
                     ⚠️ กรณีพิเศษ: แกะซอง/เปิดใช้แล้ว (อายุยา 3 เดือน)
                 </label>
