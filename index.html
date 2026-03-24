@@ -14,7 +14,6 @@
     <div id="loader"><div class="spinner"></div></div>
 
     <div id="auth-container">
-        
         <div id="page-login" class="page active">
             <div class="auth-wrapper">
                 <div class="auth-card">
@@ -57,9 +56,8 @@
                 </div>
             </div>
         </div>
-
     </div>
-    
+
     <div id="app-container" class="app-container" style="display: none;">
         <div class="sidebar-overlay" onclick="app.toggleSidebar()"></div>
         <aside class="sidebar" id="sidebar">
@@ -96,6 +94,27 @@
 
             <div id="page-wards" class="page">
                 <h2 style="margin-bottom: 20px;">จัดการกล่องยา (Wards & Units)</h2>
+                
+                <div style="background: var(--white); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">หน่วยงาน (Department)</label>
+                        <select id="filter-dept" class="form-control" onchange="app.filterWards()">
+                            <option value="all">-- ทุกหน่วยงาน --</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.85rem; font-weight: 500; color: #666; margin-bottom: 5px; display: block;">ประเภทกล่อง (Box Type)</label>
+                        <select id="filter-type" class="form-control" onchange="app.filterWards()">
+                            <option value="all">-- ทุกประเภท --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn-outline" style="padding: 10px 15px; border-color: #ccc; color: #666;" onclick="app.resetFilters()">
+                            <i class="fas fa-sync-alt"></i> ล้างตัวกรอง
+                        </button>
+                    </div>
+                </div>
+
                 <div class="ward-grid" id="ward-grid-container"></div>
             </div>
 
@@ -112,10 +131,8 @@
                     <h2 id="detail-title">รายการยา</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-                        
                         <button class="btn-primary no-print" id="btn-send-pharma" style="background: #e74c3c; width: auto; display: none;" onclick="app.updateBoxStatus('ส่งปรับแก้')"><i class="fas fa-exclamation-circle"></i> ส่งให้เภสัชฯ ปรับแก้</button>
                         <button class="btn-primary no-print" id="btn-clear-status" style="background: #27ae60; width: auto; display: none;" onclick="app.updateBoxStatus('ปกติ')"><i class="fas fa-check-circle"></i> ปรับแก้เรียบร้อย (Clear)</button>
-                        
                         <button class="btn-primary no-print" id="btn-add-drug" style="width: auto;" onclick="app.openDrugModal()"><i class="fas fa-plus"></i> เพิ่มยา</button>
                     </div>
                 </div>
@@ -163,6 +180,7 @@
             <button class="btn-primary" onclick="app.saveDrug()">บันทึกข้อมูล</button>
         </div>
     </div>
+
     <script src="drug_data.js"></script>
     <script src="app.js"></script>
 </body>
