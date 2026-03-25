@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <link rel="stylesheet" href="styles.css">
+    <style id="print-page-style"></style> 
 </head>
 <body>
     <div id="loader"><div class="spinner"></div></div>
@@ -28,8 +29,9 @@
             <ul class="nav-menu">
                 <li class="nav-item active" onclick="app.navigateMenu('page-dashboard', this)"><i class="fas fa-home"></i> หน้าหลัก</li>
                 <li class="nav-item" onclick="app.navigateMenu('page-wards', this)"><i class="fas fa-clinic-medical"></i> กล่องยาหอผู้ป่วย</li>
-                <li class="nav-item" onclick="app.navigateMenu('page-drug-info', this)"><i class="fas fa-book-medical"></i> คู่มือบริหารยา</li>
+                <li class="nav-item" onclick="app.openCalendar(this)"><i class="far fa-calendar-check"></i> ปฏิทินวันหมดอายุ</li>
                 <li class="nav-item" onclick="app.openAnalytics(this)"><i class="fas fa-chart-line"></i> รายงานวิเคราะห์</li>
+                <li class="nav-item" onclick="app.navigateMenu('page-drug-info', this)"><i class="fas fa-book-medical"></i> คู่มือบริหารยา</li>
                 <li class="nav-item" style="margin-top: 20px; color: #ffcccc;" onclick="app.logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
             </ul>
         </aside>
@@ -43,17 +45,21 @@
             <div id="page-dashboard" class="page active">
                 <h2 style="margin-bottom: 20px;">สถิติภาพรวม (Overview)</h2>
                 <div class="stats-grid">
-                    <div class="stat-card" onclick="app.navigateMenu('page-wards')" title="ดูหอผู้ป่วยทั้งหมด">
-                        <i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i>
-                        <div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div>
-                    </div>
                     <div class="stat-card" onclick="app.showFilteredList('all')" title="ดูรายการยาทั้งหมด">
                         <i class="fas fa-pills stat-icon" style="color: #3498db;"></i>
                         <div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div>
                     </div>
-                    <div class="stat-card warning" onclick="app.showFilteredList('expiring')" title="ดูเฉพาะยาใกล้หมดอายุ">
-                        <i class="fas fa-exclamation-triangle stat-icon" style="color: var(--danger);"></i>
-                        <div class="stat-info"><h4>หมดอายุแล้ว / หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
+                    <div class="stat-card expired" onclick="app.showFilteredList('expired')" title="ดูยาที่หมดอายุแล้ว">
+                        <i class="fas fa-skull-crossbones stat-icon expired" style="color: var(--expired-black);"></i>
+                        <div class="stat-info"><h4>หมดอายุแล้ว (ทิ้ง)</h4><h2 id="stat-expired" style="color: var(--expired-black);">0</h2></div>
+                    </div>
+                    <div class="stat-card warning" onclick="app.showFilteredList('exp3m')" title="ดูเฉพาะยาใกล้หมดอายุใน 3 เดือน">
+                        <i class="fas fa-exclamation-triangle stat-icon warning" style="color: var(--danger);"></i>
+                        <div class="stat-info"><h4>ใกล้หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
+                    </div>
+                    <div class="stat-card alert" onclick="app.showFilteredList('exp6m')" title="ดูเฉพาะยาใกล้หมดอายุใน 3-6 เดือน">
+                        <i class="fas fa-exclamation-circle stat-icon alert" style="color: var(--warning-orange);"></i>
+                        <div class="stat-info"><h4>ใกล้หมดอายุใน 3-6 เดือน</h4><h2 id="stat-exp-6m" style="color: var(--warning-orange);">0</h2></div>
                     </div>
                 </div>
                 <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการทำรายการล่าสุด</h3>
@@ -79,7 +85,7 @@
                 <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-wards')"><i class="fas fa-arrow-left"></i> กลับไปหน้ากล่องยา</div>
                 <div id="print-header" class="print-only">
                     <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="height:60px;">
-                    <h3>รายงานสถานะยา Stock ward โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
+                    <h3>รายงานสถานะคลังยา โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
                     <p><b>หน่วยงาน:</b> <span id="print-dept-name"></span> | <b>กล่อง:</b> <span id="print-box-name"></span></p>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -105,14 +111,14 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                     <h2 id="filtered-list-title">รายการยา</h2>
                     <div class="action-buttons" style="display: flex; gap: 10px;">
-                        <button class="btn-outline no-print" style="border-color: #27ae60; color: #27ae60;" onclick="app.exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn-outline no-print" style="border-color: #27ae60; color: #27ae60;" onclick="app.exportExcel('filtered')"><i class="fas fa-file-excel"></i> Export Excel</button>
                         <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
                     </div>
                 </div>
                 
                 <div id="print-header-global" class="print-only">
                     <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="height:60px;">
-                    <h3>รายงานรายการยาสต็อกวอร์ด โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
+                    <h3>รายงานรายการยาสต็อก โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
                     <p id="print-global-subtitle"></p>
                 </div>
 
@@ -134,15 +140,50 @@
                 </div>
             </div>
 
+            <div id="page-calendar" class="page">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2><i class="far fa-calendar-check" style="color: var(--primary-green);"></i> ปฏิทินวันหมดอายุของยา</h2>
+                    <div class="action-buttons" style="display: flex; gap: 10px;">
+                        <button class="btn-outline no-print" style="border-color: #27ae60; color: #27ae60;" onclick="app.exportExcel('calendar')"><i class="fas fa-file-excel"></i> Export Excel เดือนนี้</button>
+                        <button class="btn-outline no-print" onclick="app.printCalendar()"><i class="fas fa-print"></i> Print แนวนอน</button>
+                    </div>
+                </div>
+
+                <div id="print-header-cal" class="print-only">
+                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="height:60px;">
+                    <h3 id="print-cal-subtitle">รายงานปฏิทินยาหมดอายุ</h3>
+                </div>
+
+                <div class="calendar-controls no-print">
+                    <button class="btn-outline" onclick="app.changeMonth(-1)"><i class="fas fa-chevron-left"></i> เดือนก่อนหน้า</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="cal-month" class="form-control" style="width: 150px;" onchange="app.renderCalendar()"></select>
+                        <select id="cal-year" class="form-control" style="width: 100px;" onchange="app.renderCalendar()"></select>
+                    </div>
+                    <button class="btn-outline" onclick="app.changeMonth(1)">เดือนถัดไป <i class="fas fa-chevron-right"></i></button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="cal-header">อา.</div><div class="cal-header">จ.</div><div class="cal-header">อ.</div>
+                    <div class="cal-header">พ.</div><div class="cal-header">พฤ.</div><div class="cal-header">ศ.</div><div class="cal-header">ส.</div>
+                    </div>
+                
+                <div class="no-print" style="margin-top: 15px; font-size: 0.85rem; color: #666; display: flex; gap: 15px; justify-content: center;">
+                    <span><i class="fas fa-square" style="color: var(--expired-black);"></i> หมดอายุแล้ว</span>
+                    <span><i class="fas fa-square" style="color: var(--danger);"></i> หมดอายุใน 3 เดือน</span>
+                    <span><i class="fas fa-square" style="color: var(--warning-orange);"></i> หมดอายุใน 3-6 เดือน</span>
+                </div>
+            </div>
+
             <div id="page-analytics" class="page">
-                <h2 style="margin-bottom: 20px;"><i class="fas fa-chart-line" style="color: var(--primary-green);"></i> รายงานวิเคราะห์ยาสต็อกวอร์ด</h2>
+                <h2 style="margin-bottom: 20px;"><i class="fas fa-chart-line" style="color: var(--primary-green);"></i> รายงานวิเคราะห์คลังยา</h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
                     <div style="background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center;">
-                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">สัดส่วนความเสี่ยงยาหมดอายุ</h4>
+                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">สัดส่วนสถานะยาวันหมดอายุ</h4>
                         <div style="position: relative; height: 250px; width: 100%;"><canvas id="chart-status"></canvas></div>
                     </div>
                     <div style="background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">จำนวนยาใกล้หมดอายุ (< 3 เดือน) แยกตามหอผู้ป่วย</h4>
+                        <h4 style="color: var(--text-dark); margin-bottom: 15px;">จำนวนยาที่มีความเสี่ยงแยกตามหอผู้ป่วย</h4>
                         <div style="position: relative; height: 250px; width: 100%;"><canvas id="chart-ward-exp"></canvas></div>
                     </div>
                 </div>
@@ -177,12 +218,12 @@
             <h3 id="modal-title" style="color: var(--primary-green); margin-bottom: 15px;">จัดการยา</h3>
             <input type="hidden" id="form-item-id">
             <div class="form-group"><label>ชื่อยา</label><input type="text" id="form-drug-name" class="form-control" list="drug-master-list" autocomplete="off"><datalist id="drug-master-list"></datalist></div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <div class="form-group" style="flex:1; min-width: 100px;"><label>Lot</label><input type="text" id="form-lot" class="form-control"></div>
-                <div class="form-group" style="flex:1; min-width: 100px;"><label>จำนวน <span id="form-unit-display" style="color:var(--primary-green);"></span></label><input type="number" id="form-qty" class="form-control"></div>
-                <div class="form-group" style="flex:1; min-width: 120px;"><label>แหล่งเก็บ</label><select id="form-storage" class="form-control"><option value="ในกล่อง (In Box)">ในกล่อง (In Box)</option><option value="ชั้นเก็บยา (On Shelf)">ชั้นเก็บยา (On Shelf)</option><option value="ตู้เย็น (Refrigerator)">ตู้เย็น (Refrigerator)</option></select></div>
+            <div class="form-row-mobile">
+                <div class="form-group"><label>Lot</label><input type="text" id="form-lot" class="form-control"></div>
+                <div class="form-group"><label>จำนวน <span id="form-unit-display" style="color:var(--primary-green);"></span></label><input type="number" id="form-qty" class="form-control"></div>
+                <div class="form-group"><label>แหล่งเก็บ</label><select id="form-storage" class="form-control"><option value="ในกล่อง (In Box)">ในกล่อง (In Box)</option><option value="ชั้นเก็บยา (On Shelf)">ชั้นเก็บยา (On Shelf)</option><option value="ตู้เย็น (Refrigerator)">ตู้เย็น (Refrigerator)</option></select></div>
             </div>
-            <div class="form-group"><label>วันหมดอายุ</label><input type="date" id="form-exp" class="form-control"></div>
+            <div class="form-group"><label>วันหมดอายุที่ระบุข้างขวด/แผง</label><input type="date" id="form-exp" class="form-control"></div>
             <div class="form-group"><label>เภสัชกรผู้ตรวจสอบ</label><input type="text" id="form-verifier" class="form-control"></div>
             <button class="btn-primary" style="width: 100%; padding: 12px;" onclick="app.saveDrug()">บันทึกข้อมูล</button>
         </div>
