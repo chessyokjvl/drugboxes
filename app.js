@@ -10,6 +10,10 @@ const app = {
     currentReturnPage: 'page-box-detail', 
     currentFilterType: 'all',
     
+    // ตัวแปรสำหรับตาราง (Sort & Export)
+    currentGlobalData: [],
+    sortConfig: { column: null, asc: true },
+
     chartStatusObj: null, chartWardExpObj: null, chartTopDrugsObj: null,
 
     async init() {
@@ -18,7 +22,6 @@ const app = {
         if (userStr) {
             this.user = JSON.parse(userStr);
             this.showMainApp();
-            // โหลดแดชบอร์ดเงียบๆ ข้างหลัง
             this.loadDashboardData();
         } else {
             this.navigateAuth('page-login');
@@ -71,6 +74,17 @@ const app = {
         }
     },
 
+    // 📌 ฟังก์ชันดึงสีประจำตึก
+    getWardBadgeStyle(deptName) {
+        if (deptName.includes('พุทธรักษา')) return 'background-color: #7f8c8d; color: white;'; // เทา
+        if (deptName.includes('จำปาทอง')) return 'background-color: #27ae60; color: white;'; // เขียว
+        if (deptName.includes('ราชาวดี')) return 'background-color: #2980b9; color: white;'; // น้ำเงิน
+        if (deptName.includes('ลีลาวดี')) return 'background-color: #fd79a8; color: white;'; // ชมพู
+        if (deptName.includes('ER') || deptName.includes('ฉุกเฉิน')) return 'background-color: #c0392b; color: white;'; // แดง
+        if (deptName.includes('ECT')) return 'background-color: #d35400; color: white;'; // ส้ม
+        return 'background-color: #34495e; color: white;'; // สีมาตรฐานถ้าไม่ตรงกับด้านบน
+    },
+
     async loadMasterData() {
         const res = await this.callAPI({ action: 'get_master_data' });
         if (res && res.status === 'success') {
@@ -121,24 +135,18 @@ const app = {
         displayDiv.style.display = 'block';
     },
 
-    // 🚀 ปรับปรุงความเร็ว Login
     async login() {
         const u = document.getElementById('login-username').value;
         const p = document.getElementById('login-password').value;
         if (!u || !p) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: "กรุณากรอก Username และ Password" });
         
         const res = await this.callAPI({ action: 'login', username: u, password: p });
-        
         if (res && res.status === 'success') {
             this.user = res.user;
             localStorage.setItem('rxUser', JSON.stringify(res.user));
-            
-            // โชว์ SweetAlert แล้วสลับหน้าเลย ไม่ต้องรอโหลด Dashboard เสร็จ
             Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', showConfirmButton: false, timer: 1200 });
-            
             this.showMainApp();
-            this.loadDashboardData(); // โหลดข้อมูลกล่องยาเบื้องหลัง
-            
+            this.loadDashboardData();
         } else {
             Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบล้มเหลว', text: res ? res.message : 'เกิดข้อผิดพลาด' });
         }
@@ -257,19 +265,22 @@ const app = {
             else if (typeStr.includes('urgency')) boxColorClass = 'box-urgency'; 
 
             const isSent = (box.boxStatus === 'ส่งปรับแก้');
+            // 📌 ดึงสีประจำตึก
+            const badgeStyle = this.getWardBadgeStyle(box.department);
 
             const card = document.createElement('div');
             card.className = `box-card ${boxColorClass} ${isWarning ? 'warning' : ''}`;
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
                     <div class="box-title">${box.boxName}</div>
                     ${isSent ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem;">รอเภสัชฯ</span>` : ''}
                 </div>
-                <div style="margin-bottom: 8px;"><span class="box-badge">${box.boxType}</span></div>
-                <div style="color: #666; margin: 10px 0;"><i class="fas fa-clinic-medical"></i> ${box.department}</div>
-                <div style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px;">
-                    รายการยา: <b>${box.totalDrugs}</b><br>
-                    ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมดอายุ: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green); font-weight: 500;">✅ ยาไม่หมดอายุ</span>`}
+                <div style="margin-bottom: 10px;">
+                    <span style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; ${badgeStyle}">${box.department}</span>
+                </div>
+                <div style="font-size: 0.85rem; border-top: 1px solid #eee; padding-top: 10px; display:flex; justify-content:space-between;">
+                    <span style="color:#666;">รายการยา: <b>${box.totalDrugs}</b></span>
+                    ${isWarning ? `<span style="color:var(--danger); font-weight: 600;">⚠️ ใกล้หมด: ${box.expiringSoon}</span>` : `<span style="color:var(--primary-green);"><i class="fas fa-check-circle"></i> ปกติ</span>`}
                 </div>
             `;
             card.onclick = () => this.openBoxDetail(box.id, box.department, box.boxType, box.boxName, box.boxStatus);
@@ -307,21 +318,27 @@ const app = {
             tbody.innerHTML = '';
             if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่พบรายการยา</td></tr>';
 
+            const today = new Date();
             const threeMonths = new Date();
-            threeMonths.setDate(new Date().getDate() + 90);
+            threeMonths.setDate(today.getDate() + 90);
 
             res.data.forEach(item => {
                 const expDate = new Date(item.expireDate);
                 const isExpiring = expDate <= threeMonths;
+                const isExpired = expDate < today; // 📌 เช็คว่าหมดอายุแล้วหรือยัง
+                
+                let expLabel = '';
+                if (isExpired) expLabel = '<span style="color:red; font-weight:bold;">(หมดอายุแล้ว)</span>';
+                else if (isExpiring) expLabel = '<span style="color:#f39c12; font-weight:bold;">⚠️</span>';
+
                 const itemJson = encodeURIComponent(JSON.stringify(item));
                 
                 let actionButtons = '-';
                 if (canEdit) {
                     let openPkgBtn = '';
                     if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
-                        openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง (คำนวณอายุ 3 เดือน)"><i class="fas fa-cut"></i></button>`;
+                        openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง (อายุ 3 เดือน)"><i class="fas fa-cut"></i></button>`;
                     }
-
                     actionButtons = `
                         ${openPkgBtn}
                         <button class="btn-outline no-print" style="margin-right:5px; border-color:#27ae60; color:#27ae60;" onclick="app.verifyItem('${item.itemID}')" title="ตรวจสอบว่าถูกต้อง"><i class="fas fa-check"></i></button>
@@ -331,13 +348,10 @@ const app = {
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td>
-                            <b style="font-weight: 500;">${item.drugName}</b><br>
-                            <span style="font-size:0.75rem; color:#999;">อัปเดต: ${new Date(item.lastUpdate).toLocaleDateString('th-TH')} | โดย: ${item.verifiedBy || '-'}</span>
-                        </td>
+                        <td><b style="font-weight: 500;">${item.drugName}</b><br><span style="font-size:0.75rem; color:#999;">อัปเดต: ${new Date(item.lastUpdate).toLocaleDateString('th-TH')} | โดย: ${item.verifiedBy || '-'}</span></td>
                         <td>${item.lotNumber}</td>
                         <td><span style="font-size:0.85rem; color:var(--text-dark); background:#eee; padding:3px 8px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
-                        <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
+                        <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${expLabel}</td>
                         <td>${item.qty}</td>
                         <td class="no-print" style="white-space: nowrap;">${actionButtons}</td>
                     </tr>
@@ -346,19 +360,155 @@ const app = {
         }
     },
 
+    // 📌 ฟังก์ชันดึงยาทั้งหมด และรองรับการทำ Sort
+    async showFilteredList(filterType) {
+        this.currentReturnPage = 'page-filtered-list'; 
+        this.currentFilterType = filterType; 
+        
+        let titleText = 'รายการยาทั้งหมดในระบบ';
+        if (filterType === 'expiring') titleText = 'ยาที่หมดอายุแล้ว / หมดอายุภายใน 3 เดือน';
+        
+        document.getElementById('filtered-list-title').innerText = titleText;
+        document.getElementById('print-global-subtitle').innerText = titleText;
+        this.navigateMenu('page-filtered-list');
+
+        const res = await this.callAPI({ action: 'get_all_inventory' });
+        if (res && res.status === 'success') {
+            const today = new Date();
+            const threeMonths = new Date();
+            threeMonths.setDate(today.getDate() + 90);
+
+            let displayData = res.data;
+            if (filterType === 'expiring') {
+                displayData = res.data.filter(item => new Date(item.expireDate) <= threeMonths);
+            }
+
+            // ตั้งค่าเริ่มต้นการ Sort
+            this.currentGlobalData = displayData;
+            this.sortConfig = { column: 'drugName', asc: true }; 
+            this.renderGlobalTable(); // วาดตาราง
+        }
+    },
+
+    // 📌 ฟังก์ชันวาดตารางแยกออกมา เพื่อให้เรียกใช้ตอนกด Sort ได้
+    renderGlobalTable() {
+        const tbody = document.getElementById('filtered-tbody');
+        tbody.innerHTML = '';
+
+        if (this.currentGlobalData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่พบข้อมูล</td></tr>';
+            return;
+        }
+
+        // เรียงข้อมูลตาม Config ปัจจุบัน
+        this.currentGlobalData.sort((a, b) => {
+            let valA = a[this.sortConfig.column] || '';
+            let valB = b[this.sortConfig.column] || '';
+            
+            if (valA < valB) return this.sortConfig.asc ? -1 : 1;
+            if (valA > valB) return this.sortConfig.asc ? 1 : -1;
+            return 0;
+        });
+
+        const today = new Date();
+        const threeMonths = new Date();
+        threeMonths.setDate(today.getDate() + 90);
+        const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
+
+        this.currentGlobalData.forEach(item => {
+            const expDate = new Date(item.expireDate);
+            const isExpiring = expDate <= threeMonths;
+            const isExpired = expDate < today;
+            
+            let expLabel = '';
+            if (isExpired) expLabel = '<span style="color:red; font-weight:bold;">(หมดอายุ)</span>';
+            else if (isExpiring) expLabel = '<span style="color:#f39c12; font-weight:bold;">⚠️</span>';
+
+            const itemJson = encodeURIComponent(JSON.stringify(item));
+            const isOwner = (this.user.dept === item.department);
+            const canEdit = isPharmacy || isOwner;
+            const badgeStyle = this.getWardBadgeStyle(item.department);
+
+            let actionBtn = '-';
+            if(canEdit) {
+                let openPkgBtn = '';
+                if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
+                    openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง (อายุ 3 เดือน)"><i class="fas fa-cut"></i></button>`;
+                }
+                actionBtn = `
+                    ${openPkgBtn}
+                    <button class="btn-outline no-print" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>
+                `;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><span style="font-size:0.8rem; padding:2px 6px; border-radius:4px; ${badgeStyle}">${item.department}</span><br><span style="font-size:0.8rem; color:#666;">${item.boxName}</span></td>
+                    <td><b style="font-weight: 500;">${item.drugName}</b></td>
+                    <td>${item.lotNumber}</td>
+                    <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${expLabel}</td>
+                    <td>${item.qty}</td>
+                    <td><span style="font-size:0.8rem; background:#eee; padding:2px 6px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
+                    <td class="no-print" style="white-space:nowrap;">${actionBtn}</td>
+                </tr>
+            `;
+        });
+    },
+
+    // 📌 ฟังก์ชันกด Sort หัวตาราง
+    sortTable(columnName) {
+        if (this.sortConfig.column === columnName) {
+            this.sortConfig.asc = !this.sortConfig.asc; // สลับมาก/น้อย
+        } else {
+            this.sortConfig.column = columnName;
+            this.sortConfig.asc = true;
+        }
+        this.renderGlobalTable(); // วาดตารางใหม่
+    },
+
+    // 📌 ฟังก์ชัน Export เป็นไฟล์ Excel (CSV)
+    exportExcel() {
+        if (this.currentGlobalData.length === 0) return Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลสำหรับ Export', 'info');
+        
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // ใส่ BOM ป้องกันภาษาไทยเพี้ยน
+        csvContent += "หน่วยงาน,ชื่อกล่อง,ชื่อยา,Lot Number,วันหมดอายุ,จำนวน,แหล่งเก็บ\n";
+        
+        this.currentGlobalData.forEach(item => {
+            // ป้องกันเครื่องหมายจุลภาค (,) ในข้อความไปตัดคอลัมน์ Excel
+            const dept = `"${item.department}"`;
+            const box = `"${item.boxName}"`;
+            const dName = `"${item.drugName}"`;
+            const lot = `"${item.lotNumber}"`;
+            const exp = `"${item.expireDate}"`;
+            const qty = `"${item.qty}"`;
+            const loc = `"${item.storageLoc}"`;
+            
+            csvContent += `${dept},${box},${dName},${lot},${exp},${qty},${loc}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `รายงานสต็อกยา_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    },
+
+    openDrugModalFromGlobal(itemJsonEncoded) {
+        const item = JSON.parse(decodeURIComponent(itemJsonEncoded));
+        this.currentBoxId = item.department + '_' + item.boxName; 
+        this.currentBoxDept = item.department;
+        this.currentBoxType = item.boxType;
+        this.currentBoxName = item.boxName;
+        this.openDrugModal(itemJsonEncoded);
+    },
+
     async openPackage(itemId, drugName) {
         const today = new Date().toISOString().split('T')[0];
-        
-        // 📌 ใช้ SweetAlert2 รับค่าวันที่แบบสวยๆ
         const { value: openDateStr } = await Swal.fire({
-            title: 'แกะซองยา',
-            html: `ระบุ "วันที่แกะซอง" สำหรับ <b>${drugName}</b><br>ระบบจะปรับวันหมดอายุใหม่เป็น 3 เดือนนับจากวันที่ระบุ`,
-            input: 'date',
-            inputValue: today,
-            showCancelButton: true,
-            confirmButtonColor: '#e67e22',
-            confirmButtonText: 'บันทึก (แกะซอง)',
-            cancelButtonText: 'ยกเลิก'
+            title: 'แกะซองยา', html: `ระบุ "วันที่แกะซอง" สำหรับ <b>${drugName}</b><br>ระบบจะปรับวันหมดอายุใหม่เป็น 3 เดือนนับจากวันที่ระบุ`,
+            input: 'date', inputValue: today, showCancelButton: true, confirmButtonColor: '#e67e22', confirmButtonText: 'บันทึก (แกะซอง)', cancelButtonText: 'ยกเลิก'
         });
         
         if (!openDateStr) return;
@@ -371,78 +521,6 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึก' });
     },
 
-    async showFilteredList(filterType) {
-        this.currentReturnPage = 'page-filtered-list'; 
-        this.currentFilterType = filterType; 
-        
-        document.getElementById('filtered-list-title').innerText = filterType === 'expiring' ? 'รายการยาใกล้หมดอายุ (ภายใน 3 เดือน)' : 'รายการยาทั้งหมดในระบบ';
-        this.navigateMenu('page-filtered-list');
-
-        const res = await this.callAPI({ action: 'get_all_inventory' });
-        if (res && res.status === 'success') {
-            const tbody = document.getElementById('filtered-tbody');
-            tbody.innerHTML = '';
-            
-            const threeMonths = new Date();
-            threeMonths.setDate(new Date().getDate() + 90);
-
-            let displayData = res.data;
-            if (filterType === 'expiring') {
-                displayData = res.data.filter(item => new Date(item.expireDate) <= threeMonths);
-            }
-
-            displayData.sort((a, b) => a.drugName.localeCompare(b.drugName));
-
-            if (displayData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่พบข้อมูล</td></tr>';
-                return;
-            }
-
-            const isPharmacy = (this.user.role === 'God Admin' || this.user.role === 'Admin' || this.user.dept === 'กลุ่มงานเภสัชกรรม');
-
-            displayData.forEach(item => {
-                const expDate = new Date(item.expireDate);
-                const isExpiring = expDate <= threeMonths;
-                const itemJson = encodeURIComponent(JSON.stringify(item));
-                const isOwner = (this.user.dept === item.department);
-                const canEdit = isPharmacy || isOwner;
-
-                let actionBtn = '-';
-                if(canEdit) {
-                    let openPkgBtn = '';
-                    if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
-                        openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง (คำนวณอายุ 3 เดือน)"><i class="fas fa-cut"></i></button>`;
-                    }
-                    actionBtn = `
-                        ${openPkgBtn}
-                        <button class="btn-outline no-print" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>
-                    `;
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b style="color:var(--primary-green);">${item.department}</b><br><span style="font-size:0.8rem; color:#666;">${item.boxName}</span></td>
-                        <td><b style="font-weight: 500;">${item.drugName}</b></td>
-                        <td>${item.lotNumber}</td>
-                        <td class="${isExpiring ? 'exp-warning' : ''}">${item.expireDate} ${isExpiring ? '⚠️' : ''}</td>
-                        <td>${item.qty}</td>
-                        <td><span style="font-size:0.8rem; background:#eee; padding:2px 6px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
-                        <td class="no-print" style="white-space:nowrap;">${actionBtn}</td>
-                    </tr>
-                `;
-            });
-        }
-    },
-
-    openDrugModalFromGlobal(itemJsonEncoded) {
-        const item = JSON.parse(decodeURIComponent(itemJsonEncoded));
-        this.currentBoxId = item.department + '_' + item.boxName; 
-        this.currentBoxDept = item.department;
-        this.currentBoxType = item.boxType;
-        this.currentBoxName = item.boxName;
-        this.openDrugModal(itemJsonEncoded);
-    },
-
     async verifyItem(itemId) {
         const res = await this.callAPI({ action: 'verify_item', itemID: itemId, username: this.user.username });
         if (res && res.status === 'success') {
@@ -453,18 +531,9 @@ const app = {
 
     async updateBoxStatus(status) {
         let confirmMsg = status === 'ส่งปรับแก้' ? "ต้องการส่งกล่องนี้ให้ฝ่ายเภสัชกรรมปรับแก้ใช่หรือไม่?" : "ยืนยันการเคลียร์สถานะว่าปรับแก้เรียบร้อยแล้ว?";
-        
-        // 📌 ใช้ SweetAlert ถามยืนยัน
         const result = await Swal.fire({
-            title: 'ยืนยันการดำเนินการ',
-            text: confirmMsg,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: status === 'ส่งปรับแก้' ? '#e74c3c' : '#27ae60',
-            confirmButtonText: 'ยืนยัน',
-            cancelButtonText: 'ยกเลิก'
+            title: 'ยืนยันการดำเนินการ', text: confirmMsg, icon: 'warning', showCancelButton: true, confirmButtonColor: status === 'ส่งปรับแก้' ? '#e74c3c' : '#27ae60', confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก'
         });
-        
         if (!result.isConfirmed) return;
 
         const res = await this.callAPI({ action: 'update_box_status', boxName: this.currentBoxName, department: this.currentBoxDept, status: status, username: this.user.username });
@@ -524,7 +593,6 @@ const app = {
 
     async openAnalytics(menuItem) {
         this.navigateMenu('page-analytics', menuItem);
-        
         const res = await this.callAPI({ action: 'get_all_inventory' });
         if (res && res.status === 'success') {
             const data = res.data;
@@ -560,39 +628,26 @@ const app = {
 
             const ctxStatus = document.getElementById('chart-status').getContext('2d');
             this.chartStatusObj = new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: { labels: ['ปกติ', 'หมดอายุ < 3 เดือน', 'หมดอายุแล้ว'], datasets: [{ data: [safeCount, exp3mCount, expiredCount], backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c'], borderWidth: 0 }] },
+                type: 'doughnut', data: { labels: ['ปกติ', 'หมดอายุ < 3 เดือน', 'หมดอายุแล้ว'], datasets: [{ data: [safeCount, exp3mCount, expiredCount], backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c'], borderWidth: 0 }] },
                 options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
 
             const ctxWardExp = document.getElementById('chart-ward-exp').getContext('2d');
             this.chartWardExpObj = new Chart(ctxWardExp, {
-                type: 'bar',
-                data: { labels: wardLabels.length > 0 ? wardLabels : ['ไม่มีข้อมูล'], datasets: [{ label: 'จำนวนยาเสี่ยง (รายการ)', data: wardData.length > 0 ? wardData : [0], backgroundColor: '#e74c3c', borderRadius: 4 }] },
+                type: 'bar', data: { labels: wardLabels.length > 0 ? wardLabels : ['ไม่มีข้อมูล'], datasets: [{ label: 'จำนวนยาเสี่ยง (รายการ)', data: wardData.length > 0 ? wardData : [0], backgroundColor: '#e74c3c', borderRadius: 4 }] },
                 options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
 
             const ctxTopDrugs = document.getElementById('chart-top-drugs').getContext('2d');
             this.chartTopDrugsObj = new Chart(ctxTopDrugs, {
-                type: 'bar',
-                data: { labels: topDrugLabels, datasets: [{ label: 'จำนวนรวมทั้งหมด (ชิ้น)', data: topDrugData, backgroundColor: '#3498db', borderRadius: 4 }] },
+                type: 'bar', data: { labels: topDrugLabels, datasets: [{ label: 'จำนวนรวมทั้งหมด (ชิ้น)', data: topDrugData, backgroundColor: '#3498db', borderRadius: 4 }] },
                 options: { indexAxis: 'y', maintainAspectRatio: false }
             });
         }
     },
 
     async doStockTake() {
-        // 📌 ใช้ SweetAlert ถามยืนยัน
-        const result = await Swal.fire({
-            title: 'ยืนยันการตรวจสอบ',
-            text: "คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#27ae60',
-            confirmButtonText: 'ยืนยันการตรวจสอบ',
-            cancelButtonText: 'ยกเลิก'
-        });
-        
+        const result = await Swal.fire({ title: 'ยืนยันการตรวจสอบ', text: "คุณยืนยันว่าได้ตรวจสอบ รายการยา, จำนวน และวันหมดอายุ ในกล่องว่าถูกต้องตรงกับหน้างานจริงแล้วใช่หรือไม่?", icon: 'question', showCancelButton: true, confirmButtonColor: '#27ae60', confirmButtonText: 'ยืนยันการตรวจสอบ', cancelButtonText: 'ยกเลิก' });
         if (!result.isConfirmed) return;
 
         const res = await this.callAPI({ action: 'stock_take', boxType: this.currentBoxType, boxName: this.currentBoxName, department: this.currentBoxDept, username: this.user.username });
