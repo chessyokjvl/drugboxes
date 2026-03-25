@@ -17,9 +17,54 @@
     <div id="loader"><div class="spinner"></div></div>
 
     <div id="auth-container">
-        <div id="page-login" class="page active"><div class="auth-wrapper"><div class="auth-card"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="width: 80px; margin-bottom: 15px;"><h2 style="color: var(--primary-green); margin-bottom: 5px;">JVL Drug Boxes</h2><p style="color: #666; margin-bottom: 20px;">ระบบติดตามยาสต็อกวอร์ด</p><div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div><div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control" onkeypress="if(event.key === 'Enter') app.login()"></div><button class="btn-primary" style="width:100%;" onclick="app.login()">เข้าสู่ระบบ</button><div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;"><span class="link-text" onclick="app.navigateAuth('page-forgot')">ลืมรหัสผ่าน?</span><span class="link-text" onclick="app.navigateAuth('page-register')">ลงทะเบียนใหม่</span></div></div></div></div>
-        <div id="page-register" class="page"><div class="auth-wrapper"><div class="auth-card"><h2 style="color: var(--primary-green); margin-bottom: 15px;">ลงทะเบียนใหม่</h2><div class="form-group"><label>Username</label><input type="text" id="reg-username" class="form-control"></div><div class="form-group"><label>Password</label><input type="password" id="reg-password" class="form-control"></div><div class="form-group"><label>E-mail</label><input type="email" id="reg-email" class="form-control"></div><div class="form-group"><label>หน่วยงาน</label><select id="reg-dept" class="form-control"></select></div><div class="form-group" style="margin-top: 20px; margin-bottom: 20px;"><label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 0.85rem; color: #666; line-height: 1.4;"><input type="checkbox" id="reg-pdpa" style="margin-right: 10px; margin-top: 3px; width: 18px; height: 18px;">ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล เพื่อวัตถุประสงค์ในการใช้งานระบบ JVL Drug Boxes ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)</label></div><button class="btn-primary" style="width:100%;" onclick="app.register()">สมัครใช้งาน</button><div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div></div></div></div>
-        <div id="page-forgot" class="page"><div class="auth-wrapper"><div class="auth-card"><h2 style="color: var(--primary-green); margin-bottom: 15px;">ลืมรหัสผ่าน</h2><p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">ระบบจะส่งรหัสผ่านใหม่ไปที่อีเมลของท่าน</p><div class="form-group"><label>E-mail</label><input type="email" id="forgot-email" class="form-control"></div><button class="btn-primary" style="width:100%;" onclick="app.forgotPassword()">ส่งรหัสผ่านใหม่</button><div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div></div></div></div>
+        <div id="page-login" class="page active">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="width: 80px; margin-bottom: 15px;">
+                    <h2 style="color: var(--primary-green); margin-bottom: 5px;">JVL Drug Boxes</h2>
+                    <p style="color: #666; margin-bottom: 20px;">ระบบติดตามยาสต็อกวอร์ด</p>
+                    <div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control" onkeypress="if(event.key === 'Enter') app.login()"></div>
+                    <button class="btn-primary" style="width:100%;" onclick="app.login()">เข้าสู่ระบบ</button>
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;">
+                        <span class="link-text" onclick="app.navigateAuth('page-forgot')">ลืมรหัสผ่าน?</span>
+                        <span class="link-text" onclick="app.navigateAuth('page-register')">ลงทะเบียนใหม่</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="page-register" class="page">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <h2 style="color: var(--primary-green); margin-bottom: 15px;">ลงทะเบียนใหม่</h2>
+                    <div class="form-group"><label>Username</label><input type="text" id="reg-username" class="form-control"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="reg-password" class="form-control"></div>
+                    <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" class="form-control"></div>
+                    <div class="form-group"><label>หน่วยงาน</label><select id="reg-dept" class="form-control"></select></div>
+                    <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 0.85rem; color: #666; line-height: 1.4;">
+                            <input type="checkbox" id="reg-pdpa" style="margin-right: 10px; margin-top: 3px; width: 18px; height: 18px;">
+                            ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล เพื่อวัตถุประสงค์ในการใช้งานระบบ JVL Drug Boxes ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                        </label>
+                    </div>
+                    <button class="btn-primary" style="width:100%;" onclick="app.register()">สมัครใช้งาน</button>
+                    <div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-forgot" class="page">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <h2 style="color: var(--primary-green); margin-bottom: 15px;">ลืมรหัสผ่าน</h2>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">ระบบจะส่งรหัสผ่านใหม่ไปที่อีเมลของท่าน</p>
+                    <div class="form-group"><label>E-mail</label><input type="email" id="forgot-email" class="form-control"></div>
+                    <button class="btn-primary" style="width:100%;" onclick="app.forgotPassword()">ส่งรหัสผ่านใหม่</button>
+                    <div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="app-container" class="app-container" style="display: none;">
@@ -39,27 +84,31 @@
         <main class="main-content">
             <header class="top-header">
                 <div class="menu-toggle" onclick="app.toggleSidebar()"><i class="fas fa-bars"></i></div>
-                <div class="user-info"><i class="fas fa-user-circle"></i> <span id="user-display"></span></div>
+                <div class="user-info"><i class="fas fa-user-circle"></i> ผู้ใช้งาน: <span id="user-display"></span></div>
             </header>
 
             <div id="page-dashboard" class="page active">
                 <h2 style="margin-bottom: 20px;">สถิติภาพรวม (Overview)</h2>
                 <div class="stats-grid">
+                    <div class="stat-card" onclick="app.navigateMenu('page-wards')" title="ดูหอผู้ป่วยทั้งหมด">
+                        <i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i>
+                        <div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div>
+                    </div>
                     <div class="stat-card" onclick="app.showFilteredList('all')" title="ดูรายการยาทั้งหมด">
                         <i class="fas fa-pills stat-icon" style="color: #3498db;"></i>
                         <div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div>
                     </div>
                     <div class="stat-card expired" onclick="app.showFilteredList('expired')" title="ดูยาที่หมดอายุแล้ว">
                         <i class="fas fa-skull-crossbones stat-icon expired" style="color: var(--expired-black);"></i>
-                        <div class="stat-info"><h4>หมดอายุแล้ว (ทิ้ง)</h4><h2 id="stat-expired" style="color: var(--expired-black);">0</h2></div>
+                        <div class="stat-info"><h4>หมดอายุแล้ว</h4><h2 id="stat-expired" style="color: var(--expired-black);">0</h2></div>
                     </div>
                     <div class="stat-card warning" onclick="app.showFilteredList('exp3m')" title="ดูเฉพาะยาใกล้หมดอายุใน 3 เดือน">
                         <i class="fas fa-exclamation-triangle stat-icon warning" style="color: var(--danger);"></i>
-                        <div class="stat-info"><h4>ใกล้หมดอายุใน 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
+                        <div class="stat-info"><h4>หมดอายุ < 3 เดือน</h4><h2 id="stat-exp-3m" style="color: var(--danger);">0</h2></div>
                     </div>
                     <div class="stat-card alert" onclick="app.showFilteredList('exp6m')" title="ดูเฉพาะยาใกล้หมดอายุใน 3-6 เดือน">
                         <i class="fas fa-exclamation-circle stat-icon alert" style="color: var(--warning-orange);"></i>
-                        <div class="stat-info"><h4>ใกล้หมดอายุใน 3-6 เดือน</h4><h2 id="stat-exp-6m" style="color: var(--warning-orange);">0</h2></div>
+                        <div class="stat-info"><h4>หมดอายุ 3-6 เดือน</h4><h2 id="stat-exp-6m" style="color: var(--warning-orange);">0</h2></div>
                     </div>
                 </div>
                 <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการทำรายการล่าสุด</h3>
@@ -166,12 +215,12 @@
                 <div class="calendar-grid">
                     <div class="cal-header">อา.</div><div class="cal-header">จ.</div><div class="cal-header">อ.</div>
                     <div class="cal-header">พ.</div><div class="cal-header">พฤ.</div><div class="cal-header">ศ.</div><div class="cal-header">ส.</div>
-                    </div>
+                </div>
                 
                 <div class="no-print" style="margin-top: 15px; font-size: 0.85rem; color: #666; display: flex; gap: 15px; justify-content: center;">
                     <span><i class="fas fa-square" style="color: var(--expired-black);"></i> หมดอายุแล้ว</span>
-                    <span><i class="fas fa-square" style="color: var(--danger);"></i> หมดอายุใน 3 เดือน</span>
-                    <span><i class="fas fa-square" style="color: var(--warning-orange);"></i> หมดอายุใน 3-6 เดือน</span>
+                    <span><i class="fas fa-square" style="color: var(--danger);"></i> หมดอายุ < 3 เดือน</span>
+                    <span><i class="fas fa-square" style="color: var(--warning-orange);"></i> หมดอายุ 3-6 เดือน</span>
                 </div>
             </div>
 
@@ -223,7 +272,7 @@
                 <div class="form-group"><label>จำนวน <span id="form-unit-display" style="color:var(--primary-green);"></span></label><input type="number" id="form-qty" class="form-control"></div>
                 <div class="form-group"><label>แหล่งเก็บ</label><select id="form-storage" class="form-control"><option value="ในกล่อง (In Box)">ในกล่อง (In Box)</option><option value="ชั้นเก็บยา (On Shelf)">ชั้นเก็บยา (On Shelf)</option><option value="ตู้เย็น (Refrigerator)">ตู้เย็น (Refrigerator)</option></select></div>
             </div>
-            <div class="form-group"><label>วันหมดอายุที่ระบุข้างขวด/แผง</label><input type="date" id="form-exp" class="form-control"></div>
+            <div class="form-group"><label>วันหมดอายุ</label><input type="date" id="form-exp" class="form-control"></div>
             <div class="form-group"><label>เภสัชกรผู้ตรวจสอบ</label><input type="text" id="form-verifier" class="form-control"></div>
             <button class="btn-primary" style="width: 100%; padding: 12px;" onclick="app.saveDrug()">บันทึกข้อมูล</button>
         </div>
