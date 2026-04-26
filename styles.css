@@ -117,3 +117,20 @@ body { background: var(--bg-blue); color: var(--text-dark); overflow-x: hidden; 
     .print-only { display: block; text-align: center; margin-bottom: 20px; }
     body.print-landscape { size: landscape; }
 }
+
+/* 📌 สร้างกล่องครอบตาราง เพื่อให้เลื่อนเฉพาะตารางได้เมื่อล้นจอ */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* ทำให้ไถลื่นๆ บนมือถือ iOS */
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* เพิ่มเงาให้ดูสวยงาม */
+    border-radius: 8px; /* มุมมน */
+}
+
+/* บังคับให้ตารางกางเต็ม 100% ของพื้นที่ */
+.data-table, table {
+    width: 100%;
+    min-width: 600px; /* 📌 บังคับความกว้างขั้นต่ำ ถ้าจอมือถือเล็กกว่านี้ ตารางจะกลายเป็น Scroll ให้ไถดูได้ */
+    border-collapse: collapse;
+}
