@@ -175,3 +175,39 @@ html, body {
     body.print-landscape { size: landscape; }
     .table-container { overflow: visible !important; box-shadow: none; border: none; }
 }
+
+/* ================= CSS สำหรับป้ายบันทึกรายการยา (Print Label) ================= */
+.print-only-label { display: none; }
+
+@media print {
+    /* ซ่อนส่วนประกอบเว็บทั้งหมด */
+    .app-container, .sidebar, .top-header, .no-print, .page, #loader { display: none !important; }
+    
+    /* แสดงเฉพาะป้าย */
+    .print-only-label { display: block !important; width: 100%; }
+    
+    .label-container {
+        border: 2px solid #333;
+        padding: 20px;
+        width: 100%;
+        max-width: 19cm; /* ขนาดกว้างพอดี A4 แนวนอนหรือตั้ง */
+        margin: 0 auto;
+        font-family: 'Prompt', sans-serif;
+    }
+
+    .label-header { display: flex; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+    .label-logo { height: 60px; margin-right: 15px; }
+    .label-title h3 { margin: 0; font-size: 16pt; color: #000; }
+    .label-title p { margin: 0; font-size: 12pt; }
+
+    .label-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12pt; }
+
+    .label-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .label-table th, .label-table td { border: 1px solid #333; padding: 5px; text-align: center; font-size: 10pt; }
+    .label-table th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+    .label-table td:nth-child(2) { text-align: left; padding-left: 10px; }
+
+    .label-footer { border-top: 1px dashed #333; padding-top: 10px; }
+    .expiry-box { font-size: 14pt; margin-bottom: 15px; }
+    .signature-row { display: flex; justify-content: space-between; margin-top: 20px; font-size: 11pt; }
+}
