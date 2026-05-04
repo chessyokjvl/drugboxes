@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    
     <title>JVL Drug Boxes</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,7 +18,9 @@
 
     <div id="auth-container">
         <div id="page-login" class="page active"><div class="auth-wrapper"><div class="auth-card"><img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="width: 80px; margin-bottom: 15px;"><h2 style="color: var(--primary-green); margin-bottom: 5px;">JVL Drug Boxes</h2><p style="color: #666; margin-bottom: 20px;">ระบบติดตามยาสต็อกวอร์ด</p><div class="form-group"><label>Username</label><input type="text" id="login-username" class="form-control"></div><div class="form-group"><label>Password</label><input type="password" id="login-password" class="form-control" onkeypress="if(event.key === 'Enter') app.login()"></div><button class="btn-primary" style="width:100%;" onclick="app.login()">เข้าสู่ระบบ</button><div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;"><span class="link-text" onclick="app.navigateAuth('page-forgot')">ลืมรหัสผ่าน?</span><span class="link-text" onclick="app.navigateAuth('page-register')">ลงทะเบียนใหม่</span></div></div></div></div>
+        
         <div id="page-register" class="page"><div class="auth-wrapper"><div class="auth-card"><h2 style="color: var(--primary-green); margin-bottom: 15px;">ลงทะเบียนใหม่</h2><div class="form-group"><label>Username</label><input type="text" id="reg-username" class="form-control"></div><div class="form-group"><label>Password</label><input type="password" id="reg-password" class="form-control"></div><div class="form-group"><label>E-mail</label><input type="email" id="reg-email" class="form-control"></div><div class="form-group"><label>หน่วยงาน</label><select id="reg-dept" class="form-control"></select></div><div class="form-group" style="margin-top: 20px; margin-bottom: 20px;"><label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 0.85rem; color: #666; line-height: 1.4;"><input type="checkbox" id="reg-pdpa" style="margin-right: 10px; margin-top: 3px; width: 18px; height: 18px;">ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล เพื่อวัตถุประสงค์ในการใช้งานระบบ JVL Drug Boxes ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)</label></div><button class="btn-primary" style="width:100%;" onclick="app.register()">สมัครใช้งาน</button><div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div></div></div></div>
+        
         <div id="page-forgot" class="page"><div class="auth-wrapper"><div class="auth-card"><h2 style="color: var(--primary-green); margin-bottom: 15px;">ลืมรหัสผ่าน</h2><p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">ระบบจะส่งรหัสผ่านใหม่ไปที่อีเมลของท่าน</p><div class="form-group"><label>E-mail</label><input type="email" id="forgot-email" class="form-control"></div><button class="btn-primary" style="width:100%;" onclick="app.forgotPassword()">ส่งรหัสผ่านใหม่</button><div style="margin-top: 15px;"><span class="link-text" onclick="app.navigateAuth('page-login')">กลับไปหน้าเข้าสู่ระบบ</span></div></div></div></div>
     </div>
 
@@ -88,20 +89,25 @@
 
             <div id="page-box-detail" class="page">
                 <div style="margin-bottom: 15px; cursor: pointer; color: var(--primary-green);" onclick="app.navigateMenu('page-wards')"><i class="fas fa-arrow-left"></i> กลับไปหน้ากล่องยา</div>
+                
                 <div id="print-header" class="print-only">
                     <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="Logo" style="height:60px;">
                     <h3>รายงานสถานะคลังยา โรงพยาบาลจิตเวชเลยราชนครินทร์</h3>
                     <p><b>หน่วยงาน:</b> <span id="print-dept-name"></span> | <b>กล่อง:</b> <span id="print-box-name"></span></p>
                 </div>
+                
                 <div class="mobile-action-bar">
                     <h2 id="detail-title">รายการยา</h2>
+                    
                     <div class="action-buttons">
+                        <button class="btn-outline no-print" style="border-color: #2980b9; color: #2980b9;" onclick="app.printBoxLabel()"><i class="fas fa-tag"></i> พิมพ์ป้ายกล่อง</button>
                         <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                         <button class="btn-primary no-print" id="btn-send-pharma" style="background: #e74c3c; display: none;" onclick="app.updateBoxStatus('ส่งปรับแก้')"><i class="fas fa-exclamation-circle"></i> ส่งปรับแก้</button>
                         <button class="btn-primary no-print" id="btn-clear-status" style="background: #27ae60; display: none;" onclick="app.updateBoxStatus('ปกติ')"><i class="fas fa-check-circle"></i> เคลียร์สถานะ</button>
                         <button class="btn-primary no-print" id="btn-add-drug" onclick="app.openDrugModal()"><i class="fas fa-plus"></i> เพิ่มยา</button>
                     </div>
                 </div>
+                
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>แหล่งเก็บ</th><th>วันหมดอายุ</th><th>จำนวน</th><th class="no-print">จัดการ</th></tr></thead>
@@ -223,17 +229,53 @@
             <h3 id="modal-title" style="color: var(--primary-green); margin-bottom: 15px;">จัดการยา</h3>
             <input type="hidden" id="form-item-id">
             <div class="form-group"><label>ชื่อยา</label><input type="text" id="form-drug-name" class="form-control" list="drug-master-list" autocomplete="off"><datalist id="drug-master-list"></datalist></div>
-            
             <div class="form-row-mobile">
                 <div class="form-group"><label>Lot</label><input type="text" id="form-lot" class="form-control"></div>
                 <div class="form-group"><label>จำนวน <span id="form-unit-display" style="color:var(--primary-green);"></span></label><input type="number" id="form-qty" class="form-control"></div>
                 <div class="form-group"><label>แหล่งเก็บ</label><select id="form-storage" class="form-control"><option value="ในกล่อง (In Box)">ในกล่อง (In Box)</option><option value="ชั้นเก็บยา (On Shelf)">ชั้นเก็บยา (On Shelf)</option><option value="ตู้เย็น (Refrigerator)">ตู้เย็น (Refrigerator)</option></select></div>
             </div>
-
             <div class="form-group"><label>วันหมดอายุที่ระบุข้างขวด/แผง</label><input type="date" id="form-exp" class="form-control"></div>
             <div class="form-group"><label>เภสัชกรผู้ตรวจสอบ</label><input type="text" id="form-verifier" class="form-control"></div>
-            
             <button class="btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;" onclick="app.saveDrug()">บันทึกข้อมูล</button>
+        </div>
+    </div>
+
+    <div id="box-label-template" class="print-only-label">
+        <div class="label-container">
+            <div class="label-header">
+                <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
+                <div class="label-title">
+                    <h3>ป้ายบันทึกรายการยาและเวชภัณฑ์ (Life Saving)</h3>
+                    <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
+                </div>
+            </div>
+            <div class="label-info">
+                <span><b>หน่วยงาน:</b> <span id="lbl-dept"></span></span>
+                <span><b>ชื่อกล่อง:</b> <span id="lbl-box-name"></span></span>
+            </div>
+            <table class="label-table">
+                <thead>
+                    <tr>
+                        <th width="5%">ที่</th>
+                        <th>รายการยา/เวชภัณฑ์</th>
+                        <th width="10%">จำนวน</th>
+                        <th width="15%">เลข Lot</th>
+                        <th width="15%">วันหมดอายุ</th>
+                        <th width="15%">ที่จัดเก็บ</th>
+                    </tr>
+                </thead>
+                <tbody id="lbl-tbody"></tbody>
+            </table>
+            <div class="label-footer">
+                <div class="expiry-box">
+                    วันหมดอายุของกล่อง (ล่วงหน้า 1 เดือน): <span id="lbl-box-exp" style="color: red; font-weight: bold;"></span>
+                </div>
+                <div class="signature-row">
+                    <div>ผู้ตรวจสอบ....................................................</div>
+                    <div>วันที่ตรวจสอบ........./........./..........</div>
+                </div>
+                <p style="font-size: 8pt; margin-top: 5px; color: #666;">* ยาทุกรายการจัดเก็บในกล่องปิดผนึก ยกเว้น Adrenaline จัดเก็บในตู้เย็น</p>
+            </div>
         </div>
     </div>
 
