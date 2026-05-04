@@ -11,10 +11,8 @@ const app = {
     apiActiveCount: 0,
     currentReturnPage: 'page-box-detail', 
     currentFilterType: 'all',
-    
     currentGlobalData: [],
     sortConfig: { column: null, asc: true },
-
     calMonth: new Date().getMonth(),
     calYear: new Date().getFullYear(),
     chartStatusObj: null, chartWardExpObj: null, chartTopDrugsObj: null,
@@ -384,7 +382,7 @@ const app = {
         }
     },
 
-    // 📌 ฟังก์ชันสั่งพิมพ์ป้ายบันทึกแบบฟอร์มโรงพยาบาล
+    // 📌 ฟังก์ชันพิมพ์ป้ายกล่อง (เพิ่ม Class print-label-mode ให้ระบบรู้ว่ากำลังปริ้นท์ป้าย)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
@@ -393,21 +391,16 @@ const app = {
         const lblTbody = document.getElementById('lbl-tbody');
         lblTbody.innerHTML = '';
 
-        // 1. หา "วันหมดอายุของกล่อง" (ล่วงหน้า 1 เดือนจากยาตัวแรกที่หมดอายุ)
         let dates = drugs.map(item => new Date(item.expireDate));
         let minDate = new Date(Math.min(...dates));
-        
         let boxExpDate = new Date(minDate);
         boxExpDate.setMonth(boxExpDate.getMonth() - 1);
         
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         const formattedBoxExp = boxExpDate.toLocaleDateString('th-TH', options);
 
-        // 2. เติมข้อมูลลงในตารางป้าย
         drugs.forEach((item, index) => {
-            // Logic ถ้าเป็น Adrenaline ให้แสดง "ตู้เย็น" นอกนั้น "กล่องยาปิดผนึก"
             let storage = item.drugName.toLowerCase().includes('adrenaline') ? 'ตู้เย็น' : 'กล่องยาปิดผนึก';
-            
             lblTbody.innerHTML += `
                 <tr>
                     <td>${index + 1}</td>
@@ -420,13 +413,14 @@ const app = {
             `;
         });
 
-        // 3. ใส่ข้อมูลส่วนหัวและท้าย
         document.getElementById('lbl-dept').innerText = this.currentBoxDept;
         document.getElementById('lbl-box-name').innerText = this.currentBoxName;
         document.getElementById('lbl-box-exp').innerText = formattedBoxExp;
 
-        // 4. สั่งพิมพ์
+        // บังคับให้ CSS โชว์แค่ป้าย Template ที่ซ่อนอยู่ด้านล่าง
+        document.body.classList.add('print-label-mode');
         window.print();
+        setTimeout(() => document.body.classList.remove('print-label-mode'), 1000);
     },
 
     showFilteredList(filterType) {
