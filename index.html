@@ -187,7 +187,8 @@
             </div>
 
             <div id="page-analytics" class="page">
-                <h2 style="margin-bottom: 20px;"><i class="fas fa-chart-line" style="color: var(--primary-green);"></i> รายงานวิเคราะห์คลังยา</h2>
+                <h2 style="margin-bottom: 20px;"><i class="fas fa-chart-line" style="color: var(--primary-green);"></i> รายงานวิเคราะห์คลังยาแบบเจาะลึก</h2>
+                
                 <div class="analytics-grid">
                     <div class="chart-card">
                         <h4>สัดส่วนสถานะยาวันหมดอายุ</h4>
@@ -198,9 +199,86 @@
                         <div class="chart-container"><canvas id="chart-ward-exp"></canvas></div>
                     </div>
                 </div>
-                <div class="chart-card">
-                    <h4>Top 5 รายการยาที่มีจำนวนมากที่สุดในระบบ</h4>
-                    <div class="chart-container"><canvas id="chart-top-drugs"></canvas></div>
+
+                <div class="chart-card" id="print-expiry-section" style="margin-bottom: 30px; align-items: stretch;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; width:100%;">
+                        <h4 style="margin:0; text-align:left; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i> สรุปรายการยาที่หมดอายุ และใกล้หมดอายุ (เพื่อการจัดซื้อ)</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-outline no-print" onclick="app.exportToExcel('anl-expiry-table', 'สรุปยาใกล้หมดอายุ')"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button class="btn-outline no-print" onclick="app.printSpecificSection('print-expiry-section')"><i class="fas fa-print"></i> Print</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="anl-expiry-table">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อยา</th>
+                                    <th>วันหมดอายุ (ของ Lot นี้)</th>
+                                    <th>สถานะความเสี่ยง</th>
+                                    <th>จำนวนใน Lot นี้</th>
+                                    <th style="background:#fef5e7; color:#d35400;">จำนวนรวมที่มีทั้ง รพ.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="anl-expiry-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card" id="print-master-section" style="margin-bottom: 30px; align-items: stretch;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; width:100%;">
+                        <h4 style="margin:0; text-align:left; color:var(--primary-green);"><i class="fas fa-boxes"></i> ทะเบียนรายการยาทั้งระบบ (Inventory Master)</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-outline no-print" onclick="app.exportToExcel('anl-master-table', 'ทะเบียนยาทั้งระบบ')"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button class="btn-outline no-print" onclick="app.printSpecificSection('print-master-section')"><i class="fas fa-print"></i> Print</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-container no-print" style="box-shadow:none; border:1px solid #eee; padding:15px; margin-bottom:15px;">
+                        <div class="filter-item"><label>หอผู้ป่วย</label><select id="anl-filter-ward" class="form-control" onchange="app.renderAnlMasterTable()"><option value="all">-- ทุกหอผู้ป่วย --</option></select></div>
+                        <div class="filter-item"><label>ประเภทกล่อง</label><select id="anl-filter-box" class="form-control" onchange="app.renderAnlMasterTable()"><option value="all">-- ทุกประเภท --</option></select></div>
+                        <div class="filter-item"><label>ชื่อยา</label><select id="anl-filter-drug" placeholder="พิมพ์เพื่อค้นหา..." onchange="app.renderAnlMasterTable()"><option value="all">-- ทุกรายการยา --</option></select></div>
+                    </div>
+
+                    <div style="margin-bottom: 10px; font-weight: 500;">รวมทั้งสิ้น: <span id="anl-master-count" style="color:var(--primary-green);">0</span> รายการ | จำนวนชิ้นรวม: <span id="anl-master-qty" style="color:#3498db;">0</span> ชิ้น</div>
+                    
+                    <div class="table-container">
+                        <table class="data-table" id="anl-master-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" onclick="app.sortAnlMaster('department')">หอผู้ป่วย <i class="fas fa-sort"></i></th>
+                                    <th class="sortable" onclick="app.sortAnlMaster('boxName')">กล่อง <i class="fas fa-sort"></i></th>
+                                    <th class="sortable" onclick="app.sortAnlMaster('drugName')">ชื่อยา <i class="fas fa-sort"></i></th>
+                                    <th>Lot Number</th>
+                                    <th class="sortable" onclick="app.sortAnlMaster('expireDate')">วันหมดอายุ <i class="fas fa-sort"></i></th>
+                                    <th>จำนวน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="anl-master-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card" id="print-log-section" style="margin-bottom: 30px; align-items: stretch;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; width:100%;">
+                        <h4 style="margin:0; text-align:left; color:#34495e;"><i class="fas fa-history"></i> สถิติการอัปเดต และเคลื่อนไหวรายการยา</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-outline no-print" onclick="app.exportToExcel('anl-log-table', 'สถิติการอัพเดตยา')"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button class="btn-outline no-print" onclick="app.printSpecificSection('print-log-section')"><i class="fas fa-print"></i> Print</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-container no-print" style="box-shadow:none; border:1px solid #eee; padding:15px; margin-bottom:15px; align-items: flex-end;">
+                        <div class="filter-item"><label>ตั้งแต่วันที่</label><input type="date" id="anl-log-start" class="form-control" onchange="app.renderAnlLogsTable()"></div>
+                        <div class="filter-item"><label>ถึงวันที่</label><input type="date" id="anl-log-end" class="form-control" onchange="app.renderAnlLogsTable()"></div>
+                        <div class="filter-item filter-btn-container"><button class="btn-outline" style="width:100%; border-color:#ccc; color:#666;" onclick="app.resetAnlLogFilter()"><i class="fas fa-sync"></i> เดือนนี้</button></div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="anl-log-table">
+                            <thead><tr><th>วัน-เวลา</th><th>ประเภท</th><th>รายละเอียดการเปลี่ยนแปลง</th><th>ผู้ดำเนินการ</th></tr></thead>
+                            <tbody id="anl-log-tbody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
