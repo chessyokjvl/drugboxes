@@ -74,7 +74,7 @@ const app = {
         } catch (err) {
             this.apiActiveCount--;
             if (this.apiActiveCount === 0) this.showLoader(false);
-            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: 'การเชื่อมต่อขัดข้อง' });
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: 'การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง' });
         }
     },
 
@@ -208,7 +208,6 @@ const app = {
                 else if (expDate <= sixMonths) exp6m++;
             });
 
-            // 📌 เช็คก่อนว่ามี ID นี้ในหน้าเว็บไหม เพื่อป้องกัน Error จากการซ่อน/โชว์หน้า
             if(document.getElementById('stat-total-drugs')) {
                 document.getElementById('stat-total-drugs').innerText = totalDrugs;
                 document.getElementById('stat-expired').innerText = expired;
@@ -362,7 +361,7 @@ const app = {
                 if (canEdit) {
                     let openPkgBtn = '';
                     if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
-                        openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง (อายุ 3 เดือน)"><i class="fas fa-cut"></i></button>`;
+                        openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง"><i class="fas fa-cut"></i></button>`;
                     }
                     actionButtons = `
                         ${openPkgBtn}
@@ -383,6 +382,51 @@ const app = {
                 `;
             });
         }
+    },
+
+    // 📌 ฟังก์ชันสั่งพิมพ์ป้ายบันทึกแบบฟอร์มโรงพยาบาล
+    async printBoxLabel() {
+        const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
+        if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
+
+        const drugs = res.data;
+        const lblTbody = document.getElementById('lbl-tbody');
+        lblTbody.innerHTML = '';
+
+        // 1. หา "วันหมดอายุของกล่อง" (ล่วงหน้า 1 เดือนจากยาตัวแรกที่หมดอายุ)
+        let dates = drugs.map(item => new Date(item.expireDate));
+        let minDate = new Date(Math.min(...dates));
+        
+        let boxExpDate = new Date(minDate);
+        boxExpDate.setMonth(boxExpDate.getMonth() - 1);
+        
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedBoxExp = boxExpDate.toLocaleDateString('th-TH', options);
+
+        // 2. เติมข้อมูลลงในตารางป้าย
+        drugs.forEach((item, index) => {
+            // Logic ถ้าเป็น Adrenaline ให้แสดง "ตู้เย็น" นอกนั้น "กล่องยาปิดผนึก"
+            let storage = item.drugName.toLowerCase().includes('adrenaline') ? 'ตู้เย็น' : 'กล่องยาปิดผนึก';
+            
+            lblTbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.drugName}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.lotNumber || '-'}</td>
+                    <td>${item.expireDate}</td>
+                    <td>${storage}</td>
+                </tr>
+            `;
+        });
+
+        // 3. ใส่ข้อมูลส่วนหัวและท้าย
+        document.getElementById('lbl-dept').innerText = this.currentBoxDept;
+        document.getElementById('lbl-box-name').innerText = this.currentBoxName;
+        document.getElementById('lbl-box-exp').innerText = formattedBoxExp;
+
+        // 4. สั่งพิมพ์
+        window.print();
     },
 
     showFilteredList(filterType) {
