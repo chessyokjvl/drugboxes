@@ -7,12 +7,15 @@ const app = {
     masterData: { departments: [], drugs: [] },
     allInventory: [], 
     allBoxes: [],     
+    allLogs: [], // 📌 เก็บประวัติ Log ทั้งหมด
     tomSelectInstance: null,
+    anlDrugSelectInstance: null, // 📌 ตัวค้นหายาในหน้า Analytics
     apiActiveCount: 0,
     currentReturnPage: 'page-box-detail', 
     currentFilterType: 'all',
     currentGlobalData: [],
     sortConfig: { column: null, asc: true },
+    anlSortConfig: { column: null, asc: true }, // 📌 สำหรับเรียงตาราง Analytics
     calMonth: new Date().getMonth(),
     calYear: new Date().getFullYear(),
     chartStatusObj: null, chartWardExpObj: null, chartTopDrugsObj: null,
@@ -382,7 +385,6 @@ const app = {
         }
     },
 
-    // 📌 ฟังก์ชันพิมพ์ป้ายกล่อง (เพิ่ม Class print-label-mode ให้ระบบรู้ว่ากำลังปริ้นท์ป้าย)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
@@ -417,7 +419,6 @@ const app = {
         document.getElementById('lbl-box-name').innerText = this.currentBoxName;
         document.getElementById('lbl-box-exp').innerText = formattedBoxExp;
 
-        // บังคับให้ CSS โชว์แค่ป้าย Template ที่ซ่อนอยู่ด้านล่าง
         document.body.classList.add('print-label-mode');
         window.print();
         setTimeout(() => document.body.classList.remove('print-label-mode'), 1000);
@@ -535,6 +536,48 @@ const app = {
         document.body.removeChild(link);
     },
 
+    // 📌 ฟังก์ชันสั่ง Export ตารางจาก HTML ดิบ (ใช้ในหน้า Analytics)
+    exportToExcel(tableId, fileName) {
+        const table = document.getElementById(tableId);
+        if(!table) return;
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        const rows = table.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('th, td');
+            let rowData = [];
+            cols.forEach(c => {
+                // ข้ามคอลัมน์ "จัดการ" ที่เป็นปุ่ม
+                if(!c.classList.contains('no-print')) {
+                    let text = c.innerText.replace(/"/g, '""'); // Escaping quotes
+                    rowData.push(`"${text}"`);
+                }
+            });
+            csvContent += rowData.join(',') + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${fileName}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    },
+
+    // 📌 ฟังก์ชันสั่งพิมพ์เฉพาะส่วนที่ต้องการ (ใช้ในหน้า Analytics)
+    printSpecificSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if(!section) return;
+        section.classList.add('print-target');
+        document.body.classList.add('print-section-mode');
+        window.print();
+        setTimeout(() => {
+            section.classList.remove('print-target');
+            document.body.classList.remove('print-section-mode');
+        }, 1000);
+    },
+
     setupCalendarSelectors() {
         const monthSelect = document.getElementById('cal-month');
         const yearSelect = document.getElementById('cal-year');
@@ -641,6 +684,7 @@ const app = {
         this.currentBoxName = item.boxName;
         
         if(document.getElementById('page-calendar').classList.contains('active')) this.currentReturnPage = 'page-calendar';
+        else if(document.getElementById('page-analytics').classList.contains('active')) this.currentReturnPage = 'page-analytics';
         
         this.openDrugModal(itemJsonEncoded);
     },
@@ -733,15 +777,63 @@ const app = {
             this.allInventory = res.data;
             if (this.currentReturnPage === 'page-filtered-list') this.showFilteredList(this.currentFilterType);
             else if (this.currentReturnPage === 'page-calendar') this.renderCalendar();
+            else if (this.currentReturnPage === 'page-analytics') this.openAnalytics(); // 📌 อัพเดทหน้า Analytics
             else this.openBoxDetail(this.currentBoxId, this.currentBoxDept, this.currentBoxType, this.currentBoxName, this.currentBoxStatus);
             this.loadDashboardData();
         }
     },
 
-    async openAnalytics(menuItem) {
-        this.navigateMenu('page-analytics', menuItem);
-        const data = this.allInventory; 
+    // ==========================================
+    // 📈 ระบบประมวลผล Analytics Dashboard (ฉบับอัปเกรด)
+    // ==========================================
+    async openAnalytics(menuItem = null) {
+        if(menuItem) this.navigateMenu('page-analytics', menuItem);
         
+        // 1. วาดกราฟของเดิม
+        this.renderAnlCharts();
+
+        // 2. ดึงข้อมูล Log ใหม่
+        const logRes = await this.callAPI({ action: 'get_all_logs' });
+        if(logRes && logRes.status === 'success') {
+            this.allLogs = logRes.data;
+        }
+
+        // 3. เตรียม Filter สำหรับหน้า Master Data
+        const anlWard = document.getElementById('anl-filter-ward');
+        const anlBox = document.getElementById('anl-filter-box');
+        if(anlWard && anlBox) {
+            anlWard.innerHTML = '<option value="all">-- ทุกหอผู้ป่วย --</option>';
+            this.masterData.departments.forEach(dept => anlWard.innerHTML += `<option value="${dept}">${dept}</option>`);
+            
+            anlBox.innerHTML = '<option value="all">-- ทุกประเภท --</option>';
+            const uniqueTypes = [...new Set(this.allInventory.map(b => b.boxType))].filter(Boolean);
+            uniqueTypes.forEach(type => anlBox.innerHTML += `<option value="${type}">${type}</option>`);
+            
+            // เตรียมค้นหารายการยา
+            const anlDrug = document.getElementById('anl-filter-drug');
+            anlDrug.innerHTML = '<option value="all">-- ทุกรายการยา --</option>';
+            this.masterData.drugs.forEach(d => anlDrug.innerHTML += `<option value="${d.name}">${d.name}</option>`);
+            if (this.anlDrugSelectInstance) this.anlDrugSelectInstance.destroy();
+            this.anlDrugSelectInstance = new TomSelect("#anl-filter-drug", { 
+                create: false, sortField: { field: "text", direction: "asc" },
+                onChange: (value) => this.renderAnlMasterTable() 
+            });
+        }
+
+        // 4. เซ็ตวันที่เริ่มต้นของ Log เป็นต้นเดือนนี้
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('anl-log-start').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('anl-log-end').value = today.toISOString().split('T')[0];
+
+        // 5. วาดตาราง 3 ตาราง
+        this.renderAnlExpiryTable();
+        this.renderAnlMasterTable();
+        this.renderAnlLogsTable();
+    },
+
+    renderAnlCharts() {
+        const data = this.allInventory; 
         const today = new Date(); today.setHours(0,0,0,0);
         const threeMonths = new Date(today); threeMonths.setDate(today.getDate() + 90);
 
@@ -786,6 +878,175 @@ const app = {
             type: 'bar', data: { labels: topDrugLabels, datasets: [{ label: 'จำนวนรวมทั้งหมด (ชิ้น)', data: topDrugData, backgroundColor: '#3498db', borderRadius: 4 }] },
             options: { indexAxis: 'y', maintainAspectRatio: false }
         });
+    },
+
+    // 📌 ตารางที่ 1: สรุปยาใกล้หมดอายุ (เพื่อการจัดซื้อ)
+    renderAnlExpiryTable() {
+        const tbody = document.getElementById('anl-expiry-tbody');
+        tbody.innerHTML = '';
+        
+        const today = new Date(); today.setHours(0,0,0,0);
+        const sixMonths = new Date(today); sixMonths.setDate(today.getDate() + 180);
+
+        // 1. หายาที่เข้าข่ายหมดอายุ <= 6 เดือน
+        const riskItems = this.allInventory.filter(item => {
+            const expD = new Date(item.expireDate); expD.setHours(0,0,0,0);
+            return expD <= sixMonths;
+        });
+
+        if(riskItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">ไม่มีรายการยาที่เข้าข่าย</td></tr>';
+            return;
+        }
+
+        // 2. คำนวณจำนวนรวมทั้งหมดของยาแต่ละชนิด (ทั้ง รพ.)
+        const totalDrugMap = {};
+        this.allInventory.forEach(item => {
+            totalDrugMap[item.drugName] = (totalDrugMap[item.drugName] || 0) + Number(item.qty);
+        });
+
+        // 3. จัดกลุ่ม (Group) ตามชื่อยาและวันหมดอายุ
+        const grouped = {};
+        riskItems.forEach(item => {
+            const expDateStr = item.expireDate;
+            const key = item.drugName + '||' + expDateStr;
+            if(!grouped[key]) {
+                grouped[key] = {
+                    drugName: item.drugName,
+                    expireDate: expDateStr,
+                    qtyInLot: 0
+                };
+            }
+            grouped[key].qtyInLot += Number(item.qty);
+        });
+
+        // 4. แปลงเป็น Array แล้วเรียงตามวันหมดอายุใกล้สุดก่อน
+        let displayList = Object.values(grouped);
+        displayList.sort((a,b) => new Date(a.expireDate) - new Date(b.expireDate));
+
+        displayList.forEach(item => {
+            const expD = new Date(item.expireDate); expD.setHours(0,0,0,0);
+            let statusBadge = '';
+            if (expD < today) statusBadge = '<span style="background:var(--expired-black); color:white; padding:2px 6px; border-radius:4px; font-size:0.8rem;">หมดอายุแล้ว</span>';
+            else if (expD <= new Date(today.getTime() + 90*24*60*60*1000)) statusBadge = '<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.8rem;">< 3 เดือน</span>';
+            else statusBadge = '<span style="background:var(--warning-orange); color:white; padding:2px 6px; border-radius:4px; font-size:0.8rem;">3-6 เดือน</span>';
+
+            const totalInHosp = totalDrugMap[item.drugName] || 0;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${item.drugName}</b></td>
+                    <td>${item.expireDate}</td>
+                    <td>${statusBadge}</td>
+                    <td>${item.qtyInLot}</td>
+                    <td style="background:#fef5e7; color:#d35400; font-weight:bold;">${totalInHosp}</td>
+                </tr>
+            `;
+        });
+    },
+
+    // 📌 ตารางที่ 2: ทะเบียนยาทั้งระบบ
+    renderAnlMasterTable() {
+        const wardVal = document.getElementById('anl-filter-ward').value;
+        const boxVal = document.getElementById('anl-filter-box').value;
+        const drugVal = document.getElementById('anl-filter-drug').value;
+
+        let filtered = this.allInventory.filter(item => {
+            let passWard = (wardVal === 'all') || (item.department === wardVal);
+            let passBox = (boxVal === 'all') || (item.boxType === boxVal);
+            let passDrug = (drugVal === 'all') || (item.drugName === drugVal);
+            return passWard && passBox && passDrug;
+        });
+
+        // การเรียงลำดับ
+        filtered.sort((a, b) => {
+            let col = this.anlSortConfig.column || 'drugName';
+            let valA = a[col] || ''; let valB = b[col] || '';
+            if (valA < valB) return this.anlSortConfig.asc ? -1 : 1;
+            if (valA > valB) return this.anlSortConfig.asc ? 1 : -1;
+            return 0;
+        });
+
+        const tbody = document.getElementById('anl-master-tbody');
+        tbody.innerHTML = '';
+        
+        let totalItems = 0; let totalQty = 0;
+        
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">ไม่พบข้อมูลตามเงื่อนไข</td></tr>';
+        } else {
+            const today = new Date(); today.setHours(0,0,0,0);
+            filtered.forEach(item => {
+                totalItems++; totalQty += Number(item.qty);
+                const expDate = new Date(item.expireDate); expDate.setHours(0,0,0,0);
+                let expLabel = ''; let textClass = '';
+                if (expDate < today) { expLabel = '(หมดอายุ)'; textClass = 'color: var(--expired-black); font-weight:bold;'; }
+                else if (expDate <= new Date(today.getTime() + 90*24*60*60*1000)) { expLabel = '⚠️'; textClass = 'color: var(--danger); font-weight:bold;'; }
+                
+                const badgeStyle = this.getWardBadgeStyle(item.department);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span style="font-size:0.8rem; padding:2px 6px; border-radius:4px; ${badgeStyle}">${item.department}</span></td>
+                        <td>${item.boxName}</td>
+                        <td><b>${item.drugName}</b></td>
+                        <td>${item.lotNumber}</td>
+                        <td style="${textClass}">${item.expireDate} ${expLabel}</td>
+                        <td>${item.qty}</td>
+                    </tr>
+                `;
+            });
+        }
+        document.getElementById('anl-master-count').innerText = totalItems;
+        document.getElementById('anl-master-qty').innerText = totalQty;
+    },
+
+    sortAnlMaster(columnName) {
+        if (this.anlSortConfig.column === columnName) { this.anlSortConfig.asc = !this.anlSortConfig.asc; } 
+        else { this.anlSortConfig.column = columnName; this.anlSortConfig.asc = true; }
+        this.renderAnlMasterTable();
+    },
+
+    // 📌 ตารางที่ 3: สถิติ Log การอัปเดต (กรองตามวันที่)
+    renderAnlLogsTable() {
+        const startStr = document.getElementById('anl-log-start').value;
+        const endStr = document.getElementById('anl-log-end').value;
+        if(!startStr || !endStr) return;
+
+        const startD = new Date(startStr); startD.setHours(0,0,0,0);
+        const endD = new Date(endStr); endD.setHours(23,59,59,999);
+
+        const filteredLogs = this.allLogs.filter(log => {
+            const logD = new Date(log.timestamp);
+            return logD >= startD && logD <= endD;
+        });
+
+        const tbody = document.getElementById('anl-log-tbody');
+        tbody.innerHTML = '';
+        if(filteredLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">ไม่มีการเคลื่อนไหวในช่วงเวลานี้</td></tr>';
+            return;
+        }
+
+        filteredLogs.forEach(log => {
+            const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12'));
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-size: 0.85rem; color: #666; white-space:nowrap;">${log.timestamp}</td>
+                    <td><span style="background: ${actColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${log.action}</span></td>
+                    <td>${log.details}</td>
+                    <td style="font-weight: 500;">${log.user}</td>
+                </tr>
+            `;
+        });
+    },
+
+    resetAnlLogFilter() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('anl-log-start').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('anl-log-end').value = today.toISOString().split('T')[0];
+        this.renderAnlLogsTable();
     },
 
     async doStockTake() {
