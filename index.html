@@ -98,7 +98,6 @@
                 
                 <div class="mobile-action-bar">
                     <h2 id="detail-title">รายการยา</h2>
-                    
                     <div class="action-buttons">
                         <button class="btn-outline no-print" style="border-color: #2980b9; color: #2980b9;" onclick="app.printBoxLabel()"><i class="fas fa-tag"></i> พิมพ์ป้ายกล่อง</button>
                         <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
@@ -281,7 +280,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <div id="page-drug-info" class="page">
                 <h2 style="margin-bottom: 20px;"><i class="fas fa-book-medical"></i> คู่มือบริหารยา</h2>
                 <div style="background: var(--white); padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
@@ -319,40 +318,79 @@
     </div>
 
     <div id="box-label-template" class="print-only-label">
-        <div class="label-container">
-            <div class="label-header">
-                <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
-                <div class="label-title">
-                    <h3>ป้ายบันทึกรายการยาและเวชภัณฑ์ (Life Saving)</h3>
-                    <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
+        <div class="a4-landscape-split">
+            <div class="label-container">
+                <div class="label-header">
+                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
+                    <div class="label-title">
+                        <h3>รายการยาประจำกล่องสำรองยา<br>(JVL Drug Boxes)</h3>
+                        <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
+                    </div>
+                </div>
+                <div class="label-info">
+                    <span><b>หน่วยงาน:</b> <span class="lbl-dept"></span></span>
+                    <span><b>ชื่อกล่อง:</b> <span class="lbl-box-name"></span></span>
+                </div>
+                <table class="label-table">
+                    <thead>
+                        <tr>
+                            <th width="8%">ที่</th>
+                            <th>รายการยา/เวชภัณฑ์</th>
+                            <th width="12%">จำนวน</th>
+                            <th width="18%">เลข Lot</th>
+                            <th width="20%">วันหมดอายุ</th>
+                            <th width="15%">ที่จัดเก็บ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="lbl-tbody"></tbody>
+                </table>
+                <div class="label-footer">
+                    <div class="expiry-box">
+                        วันหมดอายุของกล่อง (ล่วงหน้า 1 เดือน):<br><span class="lbl-box-exp" style="color: red; font-weight: bold;"></span>
+                    </div>
+                    <div class="signature-row">
+                        <div>ผู้ตรวจสอบ........................................</div>
+                        <div>วันที่........./........./..........</div>
+                    </div>
+                    <p class="footer-note">* ยาทุกรายการจัดเก็บในกล่องปิดผนึก ยกเว้น Adrenaline จัดเก็บในตู้เย็น</p>
                 </div>
             </div>
-            <div class="label-info">
-                <span><b>หน่วยงาน:</b> <span id="lbl-dept"></span></span>
-                <span><b>ชื่อกล่อง:</b> <span id="lbl-box-name"></span></span>
-            </div>
-            <table class="label-table">
-                <thead>
-                    <tr>
-                        <th width="5%">ที่</th>
-                        <th>รายการยา/เวชภัณฑ์</th>
-                        <th width="10%">จำนวน</th>
-                        <th width="15%">เลข Lot</th>
-                        <th width="15%">วันหมดอายุ</th>
-                        <th width="15%">ที่จัดเก็บ</th>
-                    </tr>
-                </thead>
-                <tbody id="lbl-tbody"></tbody>
-            </table>
-            <div class="label-footer">
-                <div class="expiry-box">
-                    วันหมดอายุของกล่อง (ล่วงหน้า 1 เดือน): <span id="lbl-box-exp" style="color: red; font-weight: bold;"></span>
+
+            <div class="label-container">
+                <div class="label-header">
+                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
+                    <div class="label-title">
+                        <h3>รายการยาประจำกล่องสำรองยา<br>(JVL Drug Boxes)</h3>
+                        <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
+                    </div>
                 </div>
-                <div class="signature-row">
-                    <div>ผู้ตรวจสอบ....................................................</div>
-                    <div>วันที่ตรวจสอบ........./........./..........</div>
+                <div class="label-info">
+                    <span><b>หน่วยงาน:</b> <span class="lbl-dept"></span></span>
+                    <span><b>ชื่อกล่อง:</b> <span class="lbl-box-name"></span></span>
                 </div>
-                <p style="font-size: 8pt; margin-top: 5px; color: #666;">* ยาทุกรายการจัดเก็บในกล่องปิดผนึก ยกเว้น Adrenaline จัดเก็บในตู้เย็น</p>
+                <table class="label-table">
+                    <thead>
+                        <tr>
+                            <th width="8%">ที่</th>
+                            <th>รายการยา/เวชภัณฑ์</th>
+                            <th width="12%">จำนวน</th>
+                            <th width="18%">เลข Lot</th>
+                            <th width="20%">วันหมดอายุ</th>
+                            <th width="15%">ที่จัดเก็บ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="lbl-tbody"></tbody>
+                </table>
+                <div class="label-footer">
+                    <div class="expiry-box">
+                        วันหมดอายุของกล่อง (ล่วงหน้า 1 เดือน):<br><span class="lbl-box-exp" style="color: red; font-weight: bold;"></span>
+                    </div>
+                    <div class="signature-row">
+                        <div>ผู้ตรวจสอบ........................................</div>
+                        <div>วันที่........./........./..........</div>
+                    </div>
+                    <p class="footer-note">* ยาทุกรายการจัดเก็บในกล่องปิดผนึก ยกเว้น Adrenaline จัดเก็บในตู้เย็น</p>
+                </div>
             </div>
         </div>
     </div>
