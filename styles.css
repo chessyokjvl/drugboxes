@@ -193,12 +193,20 @@ html, body {
     .label-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15pt; color: #000; }
     
     .label-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; color: #000; }
-    .label-table th, .label-table td { border: 1px solid #333; padding: 12px 6px; text-align: center; font-size: 13pt; }
+    .label-table th, .label-table td { border: 1px solid #333; padding: 6px 4px; text-align: center; font-size: 12pt; line-height: 1.2; }
     .label-table th { background: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
     .label-table td:nth-child(2) { text-align: left; padding-left: 10px; }
     
     .label-footer { border-top: 2px dashed #333; padding-top: 20px; color: #000; }
-    .expiry-box { font-size: 16pt; margin-bottom: 25px; line-height: 1.5; }
+    .expiry-box { 
+    font-size: 15pt; 
+    margin-bottom: 20px; 
+    line-height: 1.5; 
+    text-align: center; 
+    border: 2px solid #333; 
+    padding: 10px; 
+    border-radius: 8px; 
+}
     .signature-row { display: flex; justify-content: space-between; margin-top: 30px; font-size: 13pt; padding: 0 10px; }
     .footer-note { font-size: 11pt; margin-top: 20px; color: #333; }
     
