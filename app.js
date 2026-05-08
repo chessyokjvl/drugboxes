@@ -7,15 +7,15 @@ const app = {
     masterData: { departments: [], drugs: [] },
     allInventory: [], 
     allBoxes: [],     
-    allLogs: [],
+    allLogs: [], 
     tomSelectInstance: null,
-    anlDrugSelectInstance: null,
+    anlDrugSelectInstance: null, 
     apiActiveCount: 0,
     currentReturnPage: 'page-box-detail', 
     currentFilterType: 'all',
     currentGlobalData: [],
     sortConfig: { column: null, asc: true },
-    anlSortConfig: { column: null, asc: true },
+    anlSortConfig: { column: null, asc: true }, 
     calMonth: new Date().getMonth(),
     calYear: new Date().getFullYear(),
     chartStatusObj: null, chartWardExpObj: null, chartTopDrugsObj: null,
@@ -385,14 +385,18 @@ const app = {
         }
     },
 
+    // 📌 ระบบปริ้นท์แบบ A4 แนวนอน (แบ่ง 2 ฝั่ง ซ้ายขวา)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
 
         const drugs = res.data;
-        const lblTbody = document.getElementById('lbl-tbody');
-        lblTbody.innerHTML = '';
+        
+        // 1. ดึง Elements ทั้ง 2 ฝั่ง มาล้างข้อมูล
+        const tbodies = document.querySelectorAll('.lbl-tbody');
+        tbodies.forEach(tb => tb.innerHTML = '');
 
+        // 2. คำนวณวันหมดอายุกล่อง
         let dates = drugs.map(item => new Date(item.expireDate));
         let minDate = new Date(Math.min(...dates));
         let boxExpDate = new Date(minDate);
@@ -401,9 +405,11 @@ const app = {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         const formattedBoxExp = boxExpDate.toLocaleDateString('th-TH', options);
 
+        // 3. สร้างแถวข้อมูลตาราง
+        let tableRows = '';
         drugs.forEach((item, index) => {
-            let storage = item.drugName.toLowerCase().includes('adrenaline') ? 'ตู้เย็น' : 'กล่องยาปิดผนึก';
-            lblTbody.innerHTML += `
+            let storage = item.drugName.toLowerCase().includes('adrenaline') ? 'ตู้เย็น' : 'กล่องปิดผนึก';
+            tableRows += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${item.drugName}</td>
@@ -415,13 +421,23 @@ const app = {
             `;
         });
 
-        document.getElementById('lbl-dept').innerText = this.currentBoxDept;
-        document.getElementById('lbl-box-name').innerText = this.currentBoxName;
-        document.getElementById('lbl-box-exp').innerText = formattedBoxExp;
+        // 4. จ่ายข้อมูลเข้าทั้ง 2 ฝั่ง (A5 จำนวน 2 แผ่น)
+        tbodies.forEach(tb => tb.innerHTML = tableRows);
+        document.querySelectorAll('.lbl-dept').forEach(el => el.innerText = this.currentBoxDept);
+        document.querySelectorAll('.lbl-box-name').forEach(el => el.innerText = this.currentBoxName);
+        document.querySelectorAll('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
 
+        // 5. สั่งกำหนดหน้ากระดาษเป็นแนวนอน
+        const style = document.getElementById('print-page-style');
+        style.innerHTML = `@media print { @page { size: A4 landscape; margin: 5mm; } }`;
+
+        // 6. เปิดโหมดสั่งปริ้นท์
         document.body.classList.add('print-label-mode');
         window.print();
-        setTimeout(() => document.body.classList.remove('print-label-mode'), 1000);
+        setTimeout(() => {
+            document.body.classList.remove('print-label-mode');
+            style.innerHTML = '';
+        }, 1000);
     },
 
     showFilteredList(filterType) {
@@ -783,11 +799,10 @@ const app = {
     async openAnalytics(menuItem = null) {
         if(menuItem) this.navigateMenu('page-analytics', menuItem);
         
-        // 📌 ดักจับ Error กราฟ (ตัวการทำให้หน้าขาว)
         try {
             this.renderAnlCharts();
         } catch (e) {
-            console.warn("ข้ามการวาดกราฟ (อาจไม่มีกล่อง HTML): ", e);
+            console.warn("ข้ามการวาดกราฟ: ", e);
         }
 
         const logRes = await this.callAPI({ action: 'get_all_logs' });
@@ -815,7 +830,6 @@ const app = {
             });
         }
 
-        // 📌 แก้ไขเรื่อง Timezone (กันวันที่แสดงผลเพี้ยน)
         const today = new Date();
         const offset = today.getTimezoneOffset() * 60000;
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -856,7 +870,6 @@ const app = {
         if(this.chartStatusObj) this.chartStatusObj.destroy();
         if(this.chartWardExpObj) this.chartWardExpObj.destroy();
 
-        // 📌 เช็คความปลอดภัยก่อนวาดกราฟ
         const eleStatus = document.getElementById('chart-status');
         if (eleStatus) {
             this.chartStatusObj = new Chart(eleStatus.getContext('2d'), {
@@ -1001,7 +1014,6 @@ const app = {
         const endD = new Date(endStr); endD.setHours(23,59,59,999);
 
         const filteredLogs = this.allLogs.filter(log => {
-            // แก้ไขการเปรียบเทียบวันที่ให้รองรับ Timestamp ย้อนหลัง
             const logParts = log.timestamp.split(' ')[0].split('-');
             const logD = new Date(logParts[0], parseInt(logParts[1])-1, logParts[2]);
             return logD >= startD && logD <= endD;
