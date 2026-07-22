@@ -174,15 +174,12 @@ html, body {
         margin: 0 auto;
     }
 
-    /* 📌 ปรับขนาดกรอบเหลือ 10.2 x 12.7 cm และดันหัวกระดาษ (Padding-top) ลงมาประมาณ 1 นิ้ว (2.5cm) */
+    /* 📌 Fix ขนาดกรอบตารางให้เหลือ 10.2 x 12.7 cm เป๊ะๆ */
     .label-container {
         width: 10.2cm !important; 
         height: 12.7cm !important;  
         border: 2px solid #000;
-        padding-top: 2.5cm !important; /* 📌 ดันเนื้อหาทั้งหมดด้านในตารางเลื่อนลงมา 1 นิ้ว */
-        padding-left: 0;
-        padding-right: 0;
-        padding-bottom: 0;
+        padding: 0;
         box-sizing: border-box;
         font-family: 'Prompt', sans-serif;
         background: #fff;
@@ -190,11 +187,10 @@ html, body {
         display: flex;
         flex-direction: column;
         overflow: hidden; 
-        position: relative;
     }
 
-    /* 📌 ล็อก Header (ชื่อกล่อง และ Expire) ให้อยู่ในตำแหน่งเว้นระยะ 1 นิ้วด้านบนพอดี */
-    .label-header-compact {
+    /* 📌 คำสั่งดัน Header ให้เว้นระยะลงมาจากขอบบน 1 นิ้ว (2.5 cm) อย่างมั่นคง */
+    .label-header-compact.spacing-top {
         display: flex;
         width: 100%;
         border-bottom: 2px solid #000;
@@ -202,9 +198,7 @@ html, body {
         background: #f8f9fa !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        position: absolute;
-        top: 2.5cm; /* ขยับตามระยะ 1 นิ้วที่เว้นไว้ */
-        left: 0;
+        margin-top: 2.5cm !important; /* 📌 ดันลงมา 1 นิ้วพอดี */
     }
     
     .header-box-name {
@@ -235,7 +229,6 @@ html, body {
     .label-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 35px; /* ดันตารางหลบ Header ที่ถูกAbsolute ไว้ด้านบน */
         margin-bottom: auto; 
     }
     
