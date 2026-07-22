@@ -199,7 +199,7 @@ html, body {
     }
     
     .header-box-name {
-        flex: 50%;
+        flex: 55%;
         font-size: 13pt;
         font-weight: bold;
         text-align: center;
@@ -212,7 +212,7 @@ html, body {
     }
     
     .header-exp {
-        flex: 50%;
+        flex: 45%;
         font-size: 8.5pt;
         font-weight: bold;
         text-align: center;
@@ -246,7 +246,25 @@ html, body {
         padding: 3px 2px;
     }
 
-      
+    /* 📌 หัวตาราง "ที่เก็บ" แสดงผลเป็นแนวนอนปกติ */
+    .rotate-th {
+        font-size: 8pt !important;
+        padding: 3px 2px !important;
+        vertical-align: middle;
+    }
+
+    /* 📌 Rotate เฉพาะข้อมูลข้างในช่อง "ที่เก็บ" (คอลัมน์สุดท้าย) เป็นแนวตั้งจากล่างขึ้นบน */
+    .label-table td:last-child {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-orientation: mixed;
+        font-size: 7pt !important;
+        vertical-align: middle;
+        text-align: center;
+        padding: 2px 0 !important;
+        white-space: nowrap;
+    }
+    
     .footer-sig {
         text-align: center !important;
         padding: 8px 4px !important;
