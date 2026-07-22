@@ -423,7 +423,7 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     },
 
-    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตรูปแบบตาราง 5 คอลัมน์)
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตระบบจัดกลุ่มยาชื่อเดียวกัน - Rowspan)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
@@ -440,20 +440,39 @@ const app = {
         
         const formattedBoxExp = this.formatThaiShortDate(boxExpDate);
 
-        let tableRows = '';
-        drugs.forEach((item, index) => {
-            let formattedItemExp = this.formatThaiShortDate(item.expireDate);
+        // 📌 1. จัดกลุ่มยาที่มีชื่อเดียวกัน (เพื่อยุบรวมคอลัมน์)
+        const groupedDrugs = [];
+        const drugMap = new Map();
 
-            // 📌 ตัดคอลัมน์ที่จัดเก็บออก เหลือ 5 คอลัมน์
-            tableRows += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td style="text-align: left; padding-left: 8px; font-weight: bold;">${item.drugName}</td>
-                    <td>${item.qty}</td>
-                    <td>${item.lotNumber || '-'}</td>
-                    <td>${formattedItemExp}</td>
-                </tr>
-            `;
+        drugs.forEach(item => {
+            if (!drugMap.has(item.drugName)) {
+                drugMap.set(item.drugName, []);
+                groupedDrugs.push({ name: item.drugName, items: drugMap.get(item.drugName) });
+            }
+            drugMap.get(item.drugName).push(item);
+        });
+
+        // 📌 2. สร้างแถวตาราง โดยใช้ rowspan สำหรับยาที่ชื่อซ้ำกัน
+        let tableRows = '';
+        groupedDrugs.forEach((group, index) => {
+            const rowCount = group.items.length; // จำนวน Lot ของยานี้
+            
+            group.items.forEach((item, i) => {
+                let formattedItemExp = this.formatThaiShortDate(item.expireDate);
+                tableRows += `<tr>`;
+                
+                // ถ้ารายการแรกของกลุ่ม ให้ใส่คอลัมน์ "ลำดับที่" และ "ชื่อยา" พร้อมตั้งค่า rowspan
+                if (i === 0) {
+                    tableRows += `<td rowspan="${rowCount}">${index + 1}</td>`;
+                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 8px; font-weight: bold;">${item.drugName}</td>`;
+                }
+                
+                // คอลัมน์ที่เหลือ (จำนวน, Lot, วันหมดอายุ) ให้แยกบรรทัดตามปกติ
+                tableRows += `<td>${item.qty}</td>`;
+                tableRows += `<td>${item.lotNumber || '-'}</td>`;
+                tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`; // บังคับไม่ให้วันที่ขึ้นบรรทัดใหม่
+                tableRows += `</tr>`;
+            });
         });
 
         tbodies.forEach(tb => tb.innerHTML = tableRows);
