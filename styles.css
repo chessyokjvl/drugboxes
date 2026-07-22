@@ -179,7 +179,7 @@ html, body {
         width: 10.5cm !important; 
         height: 13cm !important;  
         border: 2px solid #000;
-        padding: 0; /* ตัดขอบในออก เพื่อให้ชนขอบกระดาษ 10.5x13 พอดี */
+        padding: 0; 
         box-sizing: border-box;
         font-family: 'Prompt', sans-serif;
         background: #fff;
@@ -189,7 +189,7 @@ html, body {
         overflow: hidden; 
     }
 
-    /* 📌 Header แบบ Compact ตามภาพตัวอย่าง */
+    /* 📌 Header แบบใหม่ (ย้าย Expire ขึ้นมาแทน Ward) */
     .label-header-compact {
         display: flex;
         width: 100%;
@@ -200,11 +200,11 @@ html, body {
     }
     
     .header-box-name {
-        flex: 65%;
-        font-size: 16pt;
+        flex: 60%;
+        font-size: 13pt;
         font-weight: bold;
         text-align: center;
-        padding: 6px;
+        padding: 4px;
         border-right: 2px solid #000;
         display: flex;
         align-items: center;
@@ -212,29 +212,30 @@ html, body {
         line-height: 1.1;
     }
     
-    .header-ward {
-        flex: 35%;
-        font-size: 11pt;
+    .header-exp {
+        flex: 40%;
+        font-size: 9.5pt;
+        font-weight: bold;
         text-align: center;
-        padding: 6px;
+        padding: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
+        color: #000;
     }
     
-    /* 📌 ตารางแบบประหยัดพื้นที่ */
+    /* 📌 ตารางแบบประหยัดพื้นที่ บีบความสูงให้เผื่อได้ 20 รายการ */
     .label-table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 0;
-        height: 100%; /* ให้ตารางยืดเติมพื้นที่ 13cm */
+        margin-bottom: auto; /* 📌 ปลดล็อคไม่ให้ตารางยืดกินพื้นที่ลงมาสุดขอบ */
     }
     
     .label-table th, .label-table td {
         border: 1px solid #000;
-        padding: 3px 2px;
+        padding: 2px 2px; /* 📌 ลด Padding ให้แถวแคบลงที่สุด */
         text-align: center;
-        font-size: 7.5pt;
+        font-size: 7.5pt; /* 📌 ขนาดฟอนต์ที่อ่านได้และไม่กินที่ */
         line-height: 1.1;
     }
     
@@ -244,30 +245,16 @@ html, body {
         print-color-adjust: exact;
         font-weight: bold;
         font-size: 8pt;
+        padding: 3px 2px;
     }
     
-    /* 📌 Footer (ลายเซ็นและวันหมดอายุ) ให้อยู่ล่างสุด */
+    /* 📌 Footer (ลายเซ็น) เต็มบรรทัด ให้เขียนสะดวก */
     .footer-sig {
-        text-align: left !important;
-        padding-left: 5px !important;
-        padding-bottom: 5px !important;
-        vertical-align: bottom !important;
+        text-align: center !important;
+        padding: 8px 4px !important;
         border-top: 2px solid #000 !important;
-        height: 35px;
+        font-size: 9pt;
     }
-    
-    .footer-exp {
-        border-top: 2px solid #000 !important;
-        border-left: 2px solid #000 !important;
-        background: #e0e0e0 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        padding: 4px !important;
-        text-align: center;
-    }
-    
-    .footer-exp-title { font-size: 8pt; }
-    .footer-exp-date { font-size: 10pt; color: #000; font-weight: bold; margin-top: 2px; }
     
     body.print-landscape { size: landscape; }
     
