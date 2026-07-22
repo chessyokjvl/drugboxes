@@ -81,10 +81,11 @@ const app = {
         }
     },
 
-    // 📌 Helper ฟังก์ชันแปลงวันที่เป็น 22-ก.ค.-2029
+    // 📌 Helper ฟังก์ชันแปลงวันที่ (รองรับกรณีเป็นค่าว่าง)
     formatThaiShortDate(dateStr) {
+        if (!dateStr || dateStr.toString().trim() === '') return '-';
         const d = new Date(dateStr);
-        if (isNaN(d)) return dateStr;
+        if (isNaN(d)) return '-';
         const day = d.getDate().toString().padStart(2, '0');
         const month = THAI_MONTHS_SHORT[d.getMonth()];
         const year = d.getFullYear();
@@ -423,24 +424,28 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     },
 
-    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตระบบจัดกลุ่มยาชื่อเดียวกัน - Rowspan)
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตระบบคำนวณวันหมดอายุ และคืนค่าที่เก็บ)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
 
         const drugs = res.data;
-        
         const tbodies = document.querySelectorAll('.lbl-tbody');
         tbodies.forEach(tb => tb.innerHTML = '');
 
-        let dates = drugs.map(item => new Date(item.expireDate));
-        let minDate = new Date(Math.min(...dates));
-        let boxExpDate = new Date(minDate);
-        boxExpDate.setMonth(boxExpDate.getMonth() - 1);
+        // 📌 คำนวณวันหมดอายุกล่อง (ข้ามยาที่ไม่มีวันหมดอายุ หรือยาที่อยู่ชั้นเก็บยาที่อาจจะไม่ได้กรอก)
+        let validDates = drugs
+            .filter(item => item.expireDate && item.expireDate.trim() !== '' && !isNaN(new Date(item.expireDate)))
+            .map(item => new Date(item.expireDate));
         
-        const formattedBoxExp = this.formatThaiShortDate(boxExpDate);
+        let formattedBoxExp = '-';
+        if (validDates.length > 0) {
+            let minDate = new Date(Math.min(...validDates));
+            let boxExpDate = new Date(minDate);
+            boxExpDate.setMonth(boxExpDate.getMonth() - 1);
+            formattedBoxExp = this.formatThaiShortDate(boxExpDate);
+        }
 
-        // 📌 1. จัดกลุ่มยาที่มีชื่อเดียวกัน (เพื่อยุบรวมคอลัมน์)
         const groupedDrugs = [];
         const drugMap = new Map();
 
@@ -452,25 +457,31 @@ const app = {
             drugMap.get(item.drugName).push(item);
         });
 
-        // 📌 2. สร้างแถวตาราง โดยใช้ rowspan สำหรับยาที่ชื่อซ้ำกัน
         let tableRows = '';
         groupedDrugs.forEach((group, index) => {
-            const rowCount = group.items.length; // จำนวน Lot ของยานี้
+            const rowCount = group.items.length;
             
             group.items.forEach((item, i) => {
                 let formattedItemExp = this.formatThaiShortDate(item.expireDate);
+                
+                // จัดรูปแบบข้อความที่จัดเก็บให้สั้นลงเพื่อประหยัดพื้นที่กระดาษ
+                let storageText = item.storageLoc || 'กล่องปิดผนึก';
+                if (storageText.includes('ตู้เย็น')) storageText = 'ตู้เย็น';
+                else if (storageText.includes('ชั้นเก็บยา')) storageText = 'ชั้นเก็บยา';
+                else storageText = 'กล่องปิดผนึก';
+
                 tableRows += `<tr>`;
                 
-                // ถ้ารายการแรกของกลุ่ม ให้ใส่คอลัมน์ "ลำดับที่" และ "ชื่อยา" พร้อมตั้งค่า rowspan
                 if (i === 0) {
                     tableRows += `<td rowspan="${rowCount}">${index + 1}</td>`;
-                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 8px; font-weight: bold;">${item.drugName}</td>`;
+                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 5px; font-weight: bold;">${item.drugName}</td>`;
                 }
                 
-                // คอลัมน์ที่เหลือ (จำนวน, Lot, วันหมดอายุ) ให้แยกบรรทัดตามปกติ
-                tableRows += `<td>${item.qty}</td>`;
+                // ถ้ายาอยู่บนชั้นและไม่มีจำนวนหรือ lot ระบบจะแสดง -
+                tableRows += `<td>${item.qty || '-'}</td>`;
                 tableRows += `<td>${item.lotNumber || '-'}</td>`;
-                tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`; // บังคับไม่ให้วันที่ขึ้นบรรทัดใหม่
+                tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`;
+                tableRows += `<td>${storageText}</td>`; 
                 tableRows += `</tr>`;
             });
         });
@@ -481,7 +492,7 @@ const app = {
         document.querySelectorAll('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
 
         const style = document.getElementById('print-page-style');
-        style.innerHTML = `@media print { @page { size: A4 landscape; margin: 5mm; } }`;
+        style.innerHTML = `@media print { @page { size: A4 landscape; margin: 0; } body { padding: 5mm; } }`;
 
         document.body.classList.add('print-label-mode');
         window.print();
@@ -815,7 +826,11 @@ const app = {
 
     closeModal() { document.getElementById('modal-drug').style.display = 'none'; },
 
+    // 📌 ฟังก์ชันบันทึกยา (ปรับให้ไม่บังคับ Exp/Qty ถ้าเป็นชั้นเก็บยา)
     async saveDrug() {
+        const storageVal = document.getElementById('form-storage').value;
+        const isShelf = storageVal.includes('ชั้นเก็บยา');
+
         const payload = {
             action: 'save_drug',
             itemID: document.getElementById('form-item-id').value,
@@ -823,13 +838,15 @@ const app = {
             drugName: document.getElementById('form-drug-name').value,
             lotNumber: document.getElementById('form-lot').value,
             qty: document.getElementById('form-qty').value,
-            storageLoc: document.getElementById('form-storage').value,
+            storageLoc: storageVal,
             expireDate: document.getElementById('form-exp').value,
             status: 'Active', username: this.user.username,
             verifiedBy: document.getElementById('form-verifier').value
         };
 
-        if (!payload.drugName || !payload.expireDate || !payload.verifiedBy) return Swal.fire({ icon: 'warning', text: "กรุณากรอกให้ครบ" });
+        if (!payload.drugName || !payload.verifiedBy) return Swal.fire({ icon: 'warning', text: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+        // ถ้าไม่ใช่ชั้นเก็บยา จะบังคับให้ต้องกรอกวันหมดอายุ
+        if (!isShelf && !payload.expireDate) return Swal.fire({ icon: 'warning', text: "ยาในกล่องจำเป็นต้องระบุวันหมดอายุ" });
 
         const res = await this.callAPI(payload);
         if (res && res.status === 'success') {
