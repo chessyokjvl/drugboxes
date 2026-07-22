@@ -424,15 +424,16 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     },
 
-    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน 
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (จัดกลุ่มที่จัดเก็บ และ ชื่อยา เพื่อ Merge เซลล์)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
 
-        const drugs = res.data;
+        let drugs = res.data;
         const tbodies = document.querySelectorAll('.lbl-tbody');
         tbodies.forEach(tb => tb.innerHTML = '');
 
+        // 📌 คำนวณวันหมดอายุกล่อง
         let validDates = drugs
             .filter(item => item.expireDate && item.expireDate.trim() !== '' && !isNaN(new Date(item.expireDate)))
             .map(item => new Date(item.expireDate));
@@ -445,52 +446,70 @@ const app = {
             formattedBoxExp = this.formatThaiShortDate(boxExpDate);
         }
 
-        const groupedDrugs = [];
-        const drugMap = new Map();
+        // 📌 แปลงชื่อที่เก็บให้สั้นลงเพื่อจัดกลุ่ม
+        drugs.forEach(d => {
+            let s = d.storageLoc || 'กล่องยาปิดผนึก';
+            if (s.includes('ตู้เย็น')) d.cleanStorage = 'ตู้เย็น';
+            else if (s.includes('ชั้นเก็บยา')) d.cleanStorage = 'ชั้นเก็บยา';
+            else d.cleanStorage = 'กล่องยาปิดผนึก';
+        });
 
+        // 📌 จัดกลุ่ม ชั้นที่ 1: ตามที่จัดเก็บ -> ชั้นที่ 2: ตามชื่อยา
+        const storageGroups = new Map();
         drugs.forEach(item => {
-            if (!drugMap.has(item.drugName)) {
-                drugMap.set(item.drugName, []);
-                groupedDrugs.push({ name: item.drugName, items: drugMap.get(item.drugName) });
+            if (!storageGroups.has(item.cleanStorage)) {
+                storageGroups.set(item.cleanStorage, new Map());
             }
-            drugMap.get(item.drugName).push(item);
+            const drugGroup = storageGroups.get(item.cleanStorage);
+            if (!drugGroup.has(item.drugName)) {
+                drugGroup.set(item.drugName, []);
+            }
+            drugGroup.get(item.drugName).push(item);
         });
 
         let tableRows = '';
-        groupedDrugs.forEach((group, index) => {
-            const rowCount = group.items.length;
-            
-            // 📌 ดึงที่จัดเก็บจากรายการแรกของกลุ่มยามาใช้เป็นหลัก (Merge)
-            let storageText = group.items[0].storageLoc || 'กล่องปิดผนึก';
-            if (storageText.includes('ตู้เย็น')) storageText = 'ตู้เย็น';
-            else if (storageText.includes('ชั้นเก็บยา')) storageText = 'ชั้นเก็บยา';
-            else storageText = 'กล่องปิดผนึก';
+        let globalIndex = 1;
 
-            group.items.forEach((item, i) => {
-                let formattedItemExp = this.formatThaiShortDate(item.expireDate);
-                
-                tableRows += `<tr>`;
-                
-                if (i === 0) {
-                    tableRows += `<td rowspan="${rowCount}">${index + 1}</td>`;
-                    // 📌 เอาตัวหนา (font-weight: bold) ออก
-                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 5px;">${item.drugName}</td>`;
-                }
-                
-                tableRows += `<td>${item.qty || '-'}</td>`;
-                tableRows += `<td>${item.lotNumber || '-'}</td>`;
-                tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`;
-                
-                if (i === 0) {
-                    // 📌 Merge คอลัมน์ที่จัดเก็บ ให้ยุบรวมเหมือนชื่อยา
-                    tableRows += `<td rowspan="${rowCount}">${storageText}</td>`;
-                }
+        // 📌 สร้างตาราง (ลูปตามกลุ่มที่จัดเก็บก่อน)
+        storageGroups.forEach((drugMap, storageName) => {
+            // นับว่ากลุ่มที่จัดเก็บนี้มียากี่บรรทัด (เพื่อ Merge ช่องขวาสุด)
+            let totalRowsForStorage = 0;
+            drugMap.forEach(lots => { totalRowsForStorage += lots.length; });
 
-                tableRows += `</tr>`;
+            let isFirstRowOfStorage = true;
+
+            // ลูปตามชื่อยา
+            drugMap.forEach((lots, drugName) => {
+                const rowCountForDrug = lots.length; // จำนวน Lot ของยานี้
+
+                lots.forEach((item, i) => {
+                    let formattedItemExp = this.formatThaiShortDate(item.expireDate);
+                    
+                    tableRows += `<tr>`;
+                    
+                    // Merge ช่องลำดับ และ ชื่อยา (ถ้ามีหลาย Lot)
+                    if (i === 0) {
+                        tableRows += `<td rowspan="${rowCountForDrug}">${globalIndex++}</td>`;
+                        tableRows += `<td rowspan="${rowCountForDrug}" style="text-align: left; padding-left: 5px;">${item.drugName}</td>`;
+                    }
+                    
+                    tableRows += `<td>${item.qty || '-'}</td>`;
+                    tableRows += `<td>${item.lotNumber || '-'}</td>`;
+                    tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`;
+                    
+                    // Merge ช่องที่จัดเก็บ (ยาวคลุมยาทุกตัวในกลุ่มนี้)
+                    if (isFirstRowOfStorage) {
+                        tableRows += `<td rowspan="${totalRowsForStorage}" style="vertical-align: middle;">${storageName}</td>`;
+                        isFirstRowOfStorage = false;
+                    }
+                    
+                    tableRows += `</tr>`;
+                });
             });
         });
 
         tbodies.forEach(tb => tb.innerHTML = tableRows);
+        document.querySelectorAll('.lbl-dept').forEach(el => el.innerText = this.currentBoxDept);
         document.querySelectorAll('.lbl-box-name').forEach(el => el.innerText = this.currentBoxName);
         document.querySelectorAll('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
 
