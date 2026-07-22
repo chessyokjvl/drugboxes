@@ -1,6 +1,8 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
 const THAI_MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+// 📌 อาร์เรย์สำหรับเดือนย่อ ในหน้าป้ายปริ้นท์
+const THAI_MONTHS_SHORT = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
@@ -77,6 +79,16 @@ const app = {
             if (this.apiActiveCount === 0) this.showLoader(false);
             Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: 'การเชื่อมต่อขัดข้อง หรือ URL API ไม่ถูกต้อง' });
         }
+    },
+
+    // 📌 Helper ฟังก์ชันแปลงวันที่เป็น 22-ก.ค.-2029
+    formatThaiShortDate(dateStr) {
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = THAI_MONTHS_SHORT[d.getMonth()];
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
     },
 
     getWardBadgeStyle(deptName) {
@@ -232,7 +244,7 @@ const app = {
                 tbody.innerHTML = '';
                 if (logRes.data.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">ยังไม่มีประวัติ</td></tr>';
                 else logRes.data.forEach(log => {
-                    const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12'));
+                    const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : (log.action === 'DELETE' ? '#e74c3c' : '#f39c12')));
                     tbody.innerHTML += `<tr><td style="font-size: 0.85rem; color: #666;">${log.timestamp}</td><td><span style="background: ${actColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${log.action}</span></td><td>${log.details}</td><td style="font-weight: 500;">${log.user}</td></tr>`;
                 });
             }
@@ -364,10 +376,15 @@ const app = {
                     if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
                         openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง"><i class="fas fa-cut"></i></button>`;
                     }
+                    
+                    // 📌 เพิ่มปุ่ม Delete รูปถังขยะ
+                    let deleteBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e74c3c; color:#e74c3c;" onclick="app.deleteDrug('${item.itemID}', '${item.drugName}')" title="ลบรายการยา"><i class="fas fa-trash"></i></button>`;
+
                     actionButtons = `
                         ${openPkgBtn}
                         <button class="btn-outline no-print" style="margin-right:5px; border-color:#27ae60; color:#27ae60;" onclick="app.verifyItem('${item.itemID}')" title="ตรวจสอบว่าถูกต้อง"><i class="fas fa-check"></i></button>
-                        <button class="btn-outline no-print" onclick="app.openDrugModal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>
+                        <button class="btn-outline no-print" style="margin-right:5px;" onclick="app.openDrugModal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>
+                        ${deleteBtn}
                     `;
                 }
                 
@@ -385,53 +402,71 @@ const app = {
         }
     },
 
-    // 📌 ระบบปริ้นท์แบบ A4 แนวนอน (แบ่ง 2 ฝั่ง ซ้ายขวา)
+    // 📌 ฟังก์ชันลบรายการยา (Delete Drug)
+    async deleteDrug(itemId, drugName) {
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: `คุณต้องการลบ "${drugName}" ออกจากกล่องใช่หรือไม่? ข้อมูลจะถูกลบถาวร`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        });
+        
+        if (!result.isConfirmed) return;
+
+        const res = await this.callAPI({ action: 'delete_drug', itemID: itemId, drugName: drugName, boxName: this.currentBoxName, username: this.user.username });
+        if (res && res.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: res.message, timer: 1500, showConfirmButton: false });
+            this.handlePostSaveReturn(); 
+        } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
+    },
+
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตรูปแบบวันที่ และเอา Adrenaline ออกจากตู้เย็น)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
 
         const drugs = res.data;
         
-        // 1. ดึง Elements ทั้ง 2 ฝั่ง มาล้างข้อมูล
         const tbodies = document.querySelectorAll('.lbl-tbody');
         tbodies.forEach(tb => tb.innerHTML = '');
 
-        // 2. คำนวณวันหมดอายุกล่อง
         let dates = drugs.map(item => new Date(item.expireDate));
         let minDate = new Date(Math.min(...dates));
         let boxExpDate = new Date(minDate);
         boxExpDate.setMonth(boxExpDate.getMonth() - 1);
         
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedBoxExp = boxExpDate.toLocaleDateString('th-TH', options);
+        // 📌 แปลงเป็น 22-ก.ค.-2029
+        const formattedBoxExp = this.formatThaiShortDate(boxExpDate);
 
-        // 3. สร้างแถวข้อมูลตาราง
         let tableRows = '';
         drugs.forEach((item, index) => {
-            let storage = item.drugName.toLowerCase().includes('adrenaline') ? 'ตู้เย็น' : 'กล่องปิดผนึก';
+            // 📌 ใช้ที่เก็บตามที่เลือกไว้ในระบบเลย ถ้าไม่ได้ระบุก็เป็น กล่องปิดผนึก
+            let storage = item.storageLoc || 'กล่องยาปิดผนึก';
+            let formattedItemExp = this.formatThaiShortDate(item.expireDate);
+
             tableRows += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${item.drugName}</td>
                     <td>${item.qty}</td>
                     <td>${item.lotNumber || '-'}</td>
-                    <td>${item.expireDate}</td>
+                    <td>${formattedItemExp}</td>
                     <td>${storage}</td>
                 </tr>
             `;
         });
 
-        // 4. จ่ายข้อมูลเข้าทั้ง 2 ฝั่ง (A5 จำนวน 2 แผ่น)
         tbodies.forEach(tb => tb.innerHTML = tableRows);
         document.querySelectorAll('.lbl-dept').forEach(el => el.innerText = this.currentBoxDept);
         document.querySelectorAll('.lbl-box-name').forEach(el => el.innerText = this.currentBoxName);
         document.querySelectorAll('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
 
-        // 5. สั่งกำหนดหน้ากระดาษเป็นแนวนอน
         const style = document.getElementById('print-page-style');
         style.innerHTML = `@media print { @page { size: A4 landscape; margin: 5mm; } }`;
 
-        // 6. เปิดโหมดสั่งปริ้นท์
         document.body.classList.add('print-label-mode');
         window.print();
         setTimeout(() => {
@@ -509,7 +544,11 @@ const app = {
                 if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
                     openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง"><i class="fas fa-cut"></i></button>`;
                 }
-                actionBtn = `${openPkgBtn}<button class="btn-outline no-print" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>`;
+                
+                // 📌 เพิ่มปุ่ม Delete 
+                let deleteBtn = `<button class="btn-outline no-print" style="border-color:#e74c3c; color:#e74c3c;" onclick="app.deleteDrug('${item.itemID}', '${item.drugName}')" title="ลบรายการยา"><i class="fas fa-trash"></i></button>`;
+                
+                actionBtn = `${openPkgBtn}<button class="btn-outline no-print" style="margin-right:5px;" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>${deleteBtn}`;
             }
 
             tbody.innerHTML += `
@@ -1028,7 +1067,7 @@ const app = {
         }
 
         filteredLogs.forEach(log => {
-            const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : '#f39c12'));
+            const actColor = log.action === 'STATUS' ? '#3498db' : (log.action === 'INSERT' ? 'var(--primary-green)' : (log.action === 'STOCK_TAKE' ? '#27ae60' : (log.action === 'DELETE' ? '#e74c3c' : '#f39c12')));
             tbody.innerHTML += `
                 <tr>
                     <td style="font-size: 0.85rem; color: #666; white-space:nowrap;">${log.timestamp}</td>
