@@ -324,7 +324,8 @@
             <div class="label-container">
                 <div class="label-header-compact">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
-                    <div class="header-ward">Ward : <span class="lbl-dept"></span></div>
+                    <!-- 📌 ย้ายวันหมดอายุขึ้นมาด้านบนแทนชื่อวอร์ด -->
+                    <div class="header-exp">Expire : <span class="lbl-box-exp"></span></div>
                 </div>
                 <table class="label-table">
                     <thead>
@@ -340,12 +341,9 @@
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ........................ ว/ด/ป...................
-                            </td>
-                            <td colspan="2" class="footer-exp">
-                                <div class="footer-exp-title">วันหมดอายุของกล่อง</div>
-                                <div class="footer-exp-date lbl-box-exp"></div>
+                            <!-- 📌 ลายเซ็นเต็มบรรทัด เขียนง่าย -->
+                            <td colspan="6" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
                             </td>
                         </tr>
                     </tfoot>
@@ -356,7 +354,7 @@
             <div class="label-container">
                 <div class="label-header-compact">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
-                    <div class="header-ward">Ward : <span class="lbl-dept"></span></div>
+                    <div class="header-exp">Expire : <span class="lbl-box-exp"></span></div>
                 </div>
                 <table class="label-table">
                     <thead>
@@ -372,19 +370,15 @@
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ........................ ว/ด/ป...................
-                            </td>
-                            <td colspan="2" class="footer-exp">
-                                <div class="footer-exp-title">วันหมดอายุของกล่อง</div>
-                                <div class="footer-exp-date lbl-box-exp"></div>
+                            <td colspan="6" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
         </div>
-    </div>    
+    </div>
     <script src="drug_data.js"></script>
     <script src="app.js"></script>
 </body>
