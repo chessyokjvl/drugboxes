@@ -159,56 +159,63 @@ html, body {
     body:not(.print-label-mode) .table-container { overflow: visible !important; box-shadow: none; border: none; }
 
     /* 2. โหมดพิมพ์ป้ายบันทึกกล่อง (Label แบบ A4 แนวนอน 2 ฝั่ง) */
-    body.print-label-mode { background: #fff !important; }
+    body.print-label-mode { background: #fff !important; margin: 0; padding: 0; }
     body.print-label-mode #app-container, 
     body.print-label-mode #auth-container { display: none !important; }
     body.print-label-mode .print-only-label { display: block !important; width: 100%; height: 100%; }
 
-    /* 📌 โครงสร้างแบ่งครึ่ง A4 */
+    /* 📌 โครงสร้างแบ่งครึ่ง A4 แบบพอดีหน้ากระดาษเป๊ะๆ */
     .a4-landscape-split {
         display: flex;
-        width: 100%; /* จะถูกควบคุมความกว้างรวมโดยการตั้งค่าขนาดกระดาษใน JavaScript */
+        width: 287mm; /* หน้า A4 กว้าง 297mm หักขอบ 10mm */
+        height: 200mm; /* หน้า A4 สูง 210mm หักขอบ 10mm */
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: stretch;
         margin: 0 auto;
-        gap: 10mm; /* ช่องไฟตรงกลางระหว่าง A5 สองแผ่น */
+        gap: 10mm; 
     }
 
     .label-container {
-        border: 2px solid #333;
-        padding: 20px;
-        width: 48%; /* แบ่งครึ่งหน้ากระดาษ */
+        flex: 1; /* แบ่งพื้นที่ 50/50 อัตโนมัติ */
+        border: 2px solid #000;
+        padding: 15px;
+        box-sizing: border-box;
         font-family: 'Prompt', sans-serif;
         background: #fff;
         color: #000;
-        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
     }
 
-    /* 📌 ขยายขนาดตัวหนังสือทั้งหมด */
-    .label-header { display: flex; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-    .label-logo { height: 80px; margin-right: 20px; }
-    .label-title h3 { margin: 0; font-size: 18pt; color: #000; font-weight: bold; line-height: 1.3; }
-    .label-title p { margin: 5px 0 0 0; font-size: 14pt; color: #000; }
+    /* 📌 ปรับขนาดตัวหนังสือให้ใหญ่สะใจ */
+    .label-header { display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+    .label-logo { height: 70px; margin-right: 15px; }
+    .label-title h3 { margin: 0 0 5px 0; font-size: 18pt; color: #000; font-weight: bold; line-height: 1.2; }
+    .label-title p { margin: 0; font-size: 14pt; color: #000;}
     
-    .label-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15pt; color: #000; }
+    .label-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14pt; color: #000; font-weight: bold;}
     
-    .label-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; color: #000; }
-    .label-table th, .label-table td { border: 1px solid #333; padding: 6px 4px; text-align: center; font-size: 12pt; line-height: 1.2; }
+    /* 📌 ลดช่องไฟตารางลง เพื่อให้ชื่อยายาวๆ มีที่อยู่ */
+    .label-table { width: 100%; border-collapse: collapse; margin-bottom: auto; color: #000; }
+    .label-table th, .label-table td { border: 1px solid #000; padding: 10px 5px; text-align: center; font-size: 14pt; }
     .label-table th { background: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
-    .label-table td:nth-child(2) { text-align: left; padding-left: 10px; }
+    .label-table td:nth-child(2) { text-align: left; padding-left: 10px; font-weight: bold; }
     
-    .label-footer { border-top: 2px dashed #333; padding-top: 20px; color: #000; }
+    .label-footer { border-top: 2px dashed #000; padding-top: 15px; color: #000; margin-top: 10px; }
+    
+    /* 📌 วันหมดอายุบรรทัดเดียวกันและอยู่ตรงกลาง */
     .expiry-box { 
-    font-size: 15pt; 
-    margin-bottom: 20px; 
-    line-height: 1.5; 
-    text-align: center; 
-    border: 2px solid #333; 
-    padding: 10px; 
-    border-radius: 8px; 
-}
-    .signature-row { display: flex; justify-content: space-between; margin-top: 30px; font-size: 13pt; padding: 0 10px; }
-    .footer-note { font-size: 11pt; margin-top: 20px; color: #333; }
+        font-size: 15pt; 
+        margin-bottom: 20px; 
+        text-align: center; 
+        border: 2px solid #000; 
+        padding: 10px; 
+        border-radius: 8px; 
+        font-weight: bold;
+    }
+    
+    .signature-row { display: flex; justify-content: space-between; font-size: 14pt; padding: 0 10px; }
+    .footer-note { font-size: 12pt; color: #000; margin-top: 15px; text-align: center; }
     
     body.print-landscape { size: landscape; }
     
