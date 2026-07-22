@@ -199,7 +199,7 @@ html, body {
     }
     
     .header-box-name {
-        flex: 55%;
+        flex: 50%;
         font-size: 13pt;
         font-weight: bold;
         text-align: center;
@@ -212,7 +212,7 @@ html, body {
     }
     
     .header-exp {
-        flex: 45%;
+        flex: 50%;
         font-size: 8.5pt;
         font-weight: bold;
         text-align: center;
@@ -244,13 +244,6 @@ html, body {
         font-weight: bold;
         font-size: 8pt;
         padding: 3px 2px;
-    }
-
-    /* 📌 หัวตาราง "ที่เก็บ" ใช้วิธีแสดงปกติแนวนอนเหมือนช่องอื่น */
-    .rotate-th {
-        font-size: 8pt !important;
-        padding: 3px 2px !important;
-        vertical-align: middle;
     }
 
     /* 📌 หมุนข้อความข้อมูลด้านในช่อง "ที่เก็บ" (คอลัมน์สุดท้าย) จากล่างขึ้นบน 90 องศา */
