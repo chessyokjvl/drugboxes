@@ -317,84 +317,74 @@
         </div>
     </div>
 
-<!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน -->
+<!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน (Compact รูปแบบใหม่) -->
     <div id="box-label-template" class="print-only-label">
         <div class="a4-landscape-split">
             <!-- ฝั่งซ้าย (A5) -->
             <div class="label-container">
-                <div class="label-header">
-                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
-                    <div class="label-title">
-                        <h3>รายการยาประจำกล่องสำรองยา<br>(JVL Drug Boxes)</h3>
-                        <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
-                    </div>
-                </div>
-                <div class="label-info">
-                    <!-- 📌 ตัดหน่วยงานออก เหลือแค่ชื่อกล่อง -->
-                    <span><b>ชื่อกล่อง:</b> <span class="lbl-box-name"></span></span>
+                <div class="label-header-compact">
+                    <div class="header-box-name"><span class="lbl-box-name"></span></div>
+                    <div class="header-ward">Ward : <span class="lbl-dept"></span></div>
                 </div>
                 <table class="label-table">
                     <thead>
                         <tr>
-                            <th width="5%">ที่</th>
-                            <th width="33%">รายการยา/เวชภัณฑ์</th>
-                            <th width="12%">จำนวน</th>
-                            <th width="15%">เลข Lot</th>
-                            <th width="17%">วันหมดอายุ</th>
+                            <th width="7%">ลำดับ</th>
+                            <th width="33%">รายการ</th>
+                            <th width="9%">จำนวน</th>
+                            <th width="15%">Lot</th>
+                            <th width="18%">Expire</th>
                             <th width="18%">ที่จัดเก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ........................ ว/ด/ป...................
+                            </td>
+                            <td colspan="2" class="footer-exp">
+                                <div class="footer-exp-title">วันหมดอายุของกล่อง</div>
+                                <div class="footer-exp-date lbl-box-exp"></div>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
-                <div class="label-footer">
-                    <div class="expiry-box">
-                        วันหมดอายุกล่อง (ล่วงหน้า 1 เดือน): <span class="lbl-box-exp" style="color: red; font-weight: bold;"></span>
-                    </div>
-                    <div class="signature-row">
-                        <div>ผู้ตรวจสอบ............................</div>
-                        <div>วันที่......./......./........</div>
-                    </div>
-                </div>
             </div>
 
-            <!-- ฝั่งขวา (A5) แบบโคลนกันมาเป๊ะๆ -->
+            <!-- ฝั่งขวา (A5) แบบโคลน -->
             <div class="label-container">
-                <div class="label-header">
-                    <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" class="label-logo">
-                    <div class="label-title">
-                        <h3>รายการยาประจำกล่องสำรองยา<br>(JVL Drug Boxes)</h3>
-                        <p>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
-                    </div>
-                </div>
-                <div class="label-info">
-                    <span><b>ชื่อกล่อง:</b> <span class="lbl-box-name"></span></span>
+                <div class="label-header-compact">
+                    <div class="header-box-name"><span class="lbl-box-name"></span></div>
+                    <div class="header-ward">Ward : <span class="lbl-dept"></span></div>
                 </div>
                 <table class="label-table">
                     <thead>
                         <tr>
-                            <th width="5%">ที่</th>
-                            <th width="33%">รายการยา/เวชภัณฑ์</th>
-                            <th width="12%">จำนวน</th>
-                            <th width="15%">เลข Lot</th>
-                            <th width="17%">วันหมดอายุ</th>
+                            <th width="7%">ลำดับ</th>
+                            <th width="33%">รายการ</th>
+                            <th width="9%">จำนวน</th>
+                            <th width="15%">Lot</th>
+                            <th width="18%">Expire</th>
                             <th width="18%">ที่จัดเก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ........................ ว/ด/ป...................
+                            </td>
+                            <td colspan="2" class="footer-exp">
+                                <div class="footer-exp-title">วันหมดอายุของกล่อง</div>
+                                <div class="footer-exp-date lbl-box-exp"></div>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
-                <div class="label-footer">
-                    <div class="expiry-box">
-                        วันหมดอายุกล่อง (ล่วงหน้า 1 เดือน): <span class="lbl-box-exp" style="color: red; font-weight: bold;"></span>
-                    </div>
-                    <div class="signature-row">
-                        <div>ผู้ตรวจสอบ............................</div>
-                        <div>วันที่......./......./........</div>
-                    </div>
-                </div>
             </div>
         </div>
-    </div>
-    
+    </div>    
     <script src="drug_data.js"></script>
     <script src="app.js"></script>
 </body>
