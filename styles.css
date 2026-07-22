@@ -174,7 +174,7 @@ html, body {
         margin: 0 auto;
     }
 
-    /* 📌 Fix ขนาดกรอบตารางให้เหลือ 10.2 x 12.7 cm เป๊ะๆ */
+    /* 📌 Fix ขนาดกรอบตาราง 10.2 x 12.7 cm และคงโครงสร้างภายในเดิม */
     .label-container {
         width: 10.2cm !important; 
         height: 12.7cm !important;  
@@ -189,8 +189,7 @@ html, body {
         overflow: hidden; 
     }
 
-    /* 📌 คำสั่งดัน Header ให้เว้นระยะลงมาจากขอบบน 1 นิ้ว (2.5 cm) อย่างมั่นคง */
-    .label-header-compact.spacing-top {
+    .label-header-compact {
         display: flex;
         width: 100%;
         border-bottom: 2px solid #000;
@@ -198,7 +197,6 @@ html, body {
         background: #f8f9fa !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        margin-top: 2.5cm !important; /* 📌 ดันลงมา 1 นิ้วพอดี */
     }
     
     .header-box-name {
@@ -273,7 +271,17 @@ html, body {
         font-size: 9pt;
     }
     
+    /* 📌 กำหนดระยะขอบกระดาษตอนพิมพ์: ดันลงมาจากขอบบน 1 นิ้ว (2.5 cm) */
     body.print-landscape { size: landscape; }
+    @media print {
+        @page {
+            size: A4 landscape;
+            margin-top: 2.5cm !important; /* 📌 ดันกรอบทั้งหมดตกลงมาจากขอบบน 1 นิ้ว */
+            margin-bottom: 0mm;
+            margin-left: 0mm;
+            margin-right: 0mm;
+        }
+    }
     
     /* ระบบ Print Section ของ Analytics */
     body.print-section-mode .page > *:not(.print-target) { display: none !important; }
