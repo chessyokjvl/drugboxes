@@ -317,26 +317,24 @@
         </div>
     </div>
 
-<!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน (Compact รูปแบบใหม่) -->
+<!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน -->
     <div id="box-label-template" class="print-only-label">
         <div class="a4-landscape-split">
             <!-- ฝั่งซ้าย (A5) -->
             <div class="label-container">
                 <div class="label-header-compact">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
-                    <!-- 📌 เปลี่ยนหัวข้อเป็น วันที่กล่อง Expire -->
                     <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
                 </div>
                 <table class="label-table">
                     <thead>
                         <tr>
-                            <!-- 📌 เปลี่ยน "ลำดับ" เป็น "ที่" และ "ที่จัดเก็บ" เป็น "ที่เก็บ" เพื่อความแคบ -->
                             <th width="5%">ที่</th>
-                            <th width="45%">รายการ</th>
+                            <th width="38%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="8%">ที่เก็บ</th>
+                            <th width="15%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
@@ -360,11 +358,11 @@
                     <thead>
                         <tr>
                             <th width="5%">ที่</th>
-                            <th width="45%">รายการ</th>
+                            <th width="38%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="8%">ที่เก็บ</th>
+                            <th width="15%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
@@ -379,6 +377,8 @@
             </div>
         </div>
     </div>
+    
+    
     <script src="drug_data.js"></script>
     <script src="app.js"></script>
 </body>
