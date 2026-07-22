@@ -246,17 +246,7 @@ html, body {
         padding: 3px 2px;
     }
 
-    /* 📌 หมุนข้อความข้อมูลด้านในช่อง "ที่เก็บ" (คอลัมน์สุดท้าย) จากล่างขึ้นบน 90 องศา */
-    .label-table td:last-child {
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        text-orientation: mixed;
-        font-size: 7.5pt !important;
-        vertical-align: middle;
-        text-align: center;
-        padding: 4px 0 !important;
-    }
-    
+      
     .footer-sig {
         text-align: center !important;
         padding: 8px 4px !important;
