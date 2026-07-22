@@ -246,20 +246,22 @@ html, body {
         padding: 3px 2px;
     }
 
-    /* 📌 องศาการหมุนตัวหนังสือในช่อง "ที่เก็บ" ให้เรียงจากล่างขึ้นบน */
+    /* 📌 หัวตาราง "ที่เก็บ" ใช้วิธีแสดงปกติแนวนอนเหมือนช่องอื่น */
     .rotate-th {
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        text-orientation: mixed;
-        font-size: 7pt !important;
-        height: 20px;
-        padding: 2px 0 !important;
+        font-size: 8pt !important;
+        padding: 3px 2px !important;
         vertical-align: middle;
     }
 
+    /* 📌 หมุนข้อความข้อมูลด้านในช่อง "ที่เก็บ" (คอลัมน์สุดท้าย) จากล่างขึ้นบน 90 องศา */
     .label-table td:last-child {
-        font-size: 6.5pt; /* บีบฟอนต์ในช่องที่เก็บให้ตัวเล็กพอดีช่องแคบๆ */
-        letter-spacing: -0.5px;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-orientation: mixed;
+        font-size: 7.5pt !important;
+        vertical-align: middle;
+        text-align: center;
+        padding: 4px 0 !important;
     }
     
     .footer-sig {
