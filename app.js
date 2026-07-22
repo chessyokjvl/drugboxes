@@ -423,7 +423,7 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     },
 
-    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตรูปแบบวันที่ และเอา Adrenaline ออกจากตู้เย็น)
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตรูปแบบตาราง 5 คอลัมน์)
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
@@ -438,23 +438,20 @@ const app = {
         let boxExpDate = new Date(minDate);
         boxExpDate.setMonth(boxExpDate.getMonth() - 1);
         
-        // 📌 แปลงเป็น 22-ก.ค.-2029
         const formattedBoxExp = this.formatThaiShortDate(boxExpDate);
 
         let tableRows = '';
         drugs.forEach((item, index) => {
-            // 📌 ใช้ที่เก็บตามที่เลือกไว้ในระบบเลย ถ้าไม่ได้ระบุก็เป็น กล่องปิดผนึก
-            let storage = item.storageLoc || 'กล่องยาปิดผนึก';
             let formattedItemExp = this.formatThaiShortDate(item.expireDate);
 
+            // 📌 ตัดคอลัมน์ที่จัดเก็บออก เหลือ 5 คอลัมน์
             tableRows += `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${item.drugName}</td>
+                    <td style="text-align: left; padding-left: 8px; font-weight: bold;">${item.drugName}</td>
                     <td>${item.qty}</td>
                     <td>${item.lotNumber || '-'}</td>
                     <td>${formattedItemExp}</td>
-                    <td>${storage}</td>
                 </tr>
             `;
         });
@@ -474,7 +471,7 @@ const app = {
             style.innerHTML = '';
         }, 1000);
     },
-
+    
     showFilteredList(filterType) {
         this.currentReturnPage = 'page-filtered-list'; 
         this.currentFilterType = filterType; 
