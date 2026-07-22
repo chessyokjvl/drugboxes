@@ -424,7 +424,7 @@ const app = {
         } else Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     },
 
-    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน (อัปเดตระบบคำนวณวันหมดอายุ และคืนค่าที่เก็บ)
+    // 📌 ระบบพิมพ์ป้าย A4 แนวนอน 
     async printBoxLabel() {
         const res = await this.callAPI({ action: 'get_box_detail', boxId: this.currentBoxId });
         if (!res || res.data.length === 0) return Swal.fire('ไม่พบข้อมูล', 'ไม่มีรายการยาในกล่องนี้', 'warning');
@@ -433,7 +433,6 @@ const app = {
         const tbodies = document.querySelectorAll('.lbl-tbody');
         tbodies.forEach(tb => tb.innerHTML = '');
 
-        // 📌 คำนวณวันหมดอายุกล่อง (ข้ามยาที่ไม่มีวันหมดอายุ หรือยาที่อยู่ชั้นเก็บยาที่อาจจะไม่ได้กรอก)
         let validDates = drugs
             .filter(item => item.expireDate && item.expireDate.trim() !== '' && !isNaN(new Date(item.expireDate)))
             .map(item => new Date(item.expireDate));
@@ -461,33 +460,37 @@ const app = {
         groupedDrugs.forEach((group, index) => {
             const rowCount = group.items.length;
             
+            // 📌 ดึงที่จัดเก็บจากรายการแรกของกลุ่มยามาใช้เป็นหลัก (Merge)
+            let storageText = group.items[0].storageLoc || 'กล่องปิดผนึก';
+            if (storageText.includes('ตู้เย็น')) storageText = 'ตู้เย็น';
+            else if (storageText.includes('ชั้นเก็บยา')) storageText = 'ชั้นเก็บยา';
+            else storageText = 'กล่องปิดผนึก';
+
             group.items.forEach((item, i) => {
                 let formattedItemExp = this.formatThaiShortDate(item.expireDate);
                 
-                // จัดรูปแบบข้อความที่จัดเก็บให้สั้นลงเพื่อประหยัดพื้นที่กระดาษ
-                let storageText = item.storageLoc || 'กล่องปิดผนึก';
-                if (storageText.includes('ตู้เย็น')) storageText = 'ตู้เย็น';
-                else if (storageText.includes('ชั้นเก็บยา')) storageText = 'ชั้นเก็บยา';
-                else storageText = 'กล่องปิดผนึก';
-
                 tableRows += `<tr>`;
                 
                 if (i === 0) {
                     tableRows += `<td rowspan="${rowCount}">${index + 1}</td>`;
-                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 5px; font-weight: bold;">${item.drugName}</td>`;
+                    // 📌 เอาตัวหนา (font-weight: bold) ออก
+                    tableRows += `<td rowspan="${rowCount}" style="text-align: left; padding-left: 5px;">${item.drugName}</td>`;
                 }
                 
-                // ถ้ายาอยู่บนชั้นและไม่มีจำนวนหรือ lot ระบบจะแสดง -
                 tableRows += `<td>${item.qty || '-'}</td>`;
                 tableRows += `<td>${item.lotNumber || '-'}</td>`;
                 tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`;
-                tableRows += `<td>${storageText}</td>`; 
+                
+                if (i === 0) {
+                    // 📌 Merge คอลัมน์ที่จัดเก็บ ให้ยุบรวมเหมือนชื่อยา
+                    tableRows += `<td rowspan="${rowCount}">${storageText}</td>`;
+                }
+
                 tableRows += `</tr>`;
             });
         });
 
         tbodies.forEach(tb => tb.innerHTML = tableRows);
-        document.querySelectorAll('.lbl-dept').forEach(el => el.innerText = this.currentBoxDept);
         document.querySelectorAll('.lbl-box-name').forEach(el => el.innerText = this.currentBoxName);
         document.querySelectorAll('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
 
