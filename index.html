@@ -99,8 +99,9 @@
                 <div class="mobile-action-bar">
                     <h2 id="detail-title">รายการยา</h2>
                     <div class="action-buttons">
+                        <button class="btn-outline no-print" style="border-color: #8e44ad; color: #8e44ad;" onclick="app.printStickers()"><i class="fas fa-sticky-note"></i> ปริ้นท์สติ๊กเกอร์แปะซอง</button>
                         <button class="btn-outline no-print" style="border-color: #2980b9; color: #2980b9;" onclick="app.printBoxLabel()"><i class="fas fa-tag"></i> พิมพ์ป้ายกล่อง</button>
-                        <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                        <button class="btn-outline no-print" onclick="window.print()"><i class="fas fa-print"></i> Print รายงาน</button>
                         <button class="btn-primary no-print" id="btn-send-pharma" style="background: #e74c3c; display: none;" onclick="app.updateBoxStatus('ส่งปรับแก้')"><i class="fas fa-exclamation-circle"></i> ส่งปรับแก้</button>
                         <button class="btn-primary no-print" id="btn-clear-status" style="background: #27ae60; display: none;" onclick="app.updateBoxStatus('ปกติ')"><i class="fas fa-check-circle"></i> เคลียร์สถานะ</button>
                         <button class="btn-primary no-print" id="btn-add-drug" onclick="app.openDrugModal()"><i class="fas fa-plus"></i> เพิ่มยา</button>
@@ -109,7 +110,19 @@
                 
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>ชื่อยา</th><th>Lot Number</th><th>แหล่งเก็บ</th><th>วันหมดอายุ</th><th>จำนวน</th><th class="no-print">จัดการ</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th class="no-print" width="40" style="text-align: center;">
+                                    <input type="checkbox" id="check-all-stickers" onchange="app.toggleCheckAllStickers(this)" title="เลือกทั้งหมด">
+                                </th>
+                                <th>ชื่อยา</th>
+                                <th>Lot Number</th>
+                                <th>แหล่งเก็บ</th>
+                                <th>วันหมดอายุ</th>
+                                <th>จำนวน</th>
+                                <th class="no-print">จัดการ</th>
+                            </tr>
+                        </thead>
                         <tbody id="detail-tbody"></tbody>
                     </table>
                 </div>
@@ -317,13 +330,10 @@
         </div>
     </div>
 
-<!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน -->
     <div id="box-label-template" class="print-only-label">
         <div class="a4-landscape-split">
-            <!-- ฝั่งซ้าย (A5) -->
             <div class="label-container">
-                <!-- 📌 เพิ่มคลาส spacing-top เพื่อดันหัวตารางลงมา 1 นิ้ว -->
-                <div class="label-header-compact spacing-top">
+                <div class="label-header-compact">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
                     <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
                 </div>
@@ -331,28 +341,26 @@
                     <thead>
                         <tr>
                             <th width="5%">ที่</th>
-                            <th width="45%">รายการ</th>
+                            <th width="38%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="8%" class="rotate-th">ที่เก็บ</th>
+                            <th width="15%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
                             <td colspan="6" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่................../............................/....................
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
-            <!-- ฝั่งขวา (A5) แบบโคลน -->
             <div class="label-container">
-                <!-- 📌 เพิ่มคลาส spacing-top เพื่อดันหัวตารางลงมา 1 นิ้ว -->
-                <div class="label-header-compact spacing-top">
+                <div class="label-header-compact">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
                     <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
                 </div>
@@ -360,18 +368,18 @@
                     <thead>
                         <tr>
                             <th width="5%">ที่</th>
-                            <th width="45%">รายการ</th>
+                            <th width="38%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="8%" class="rotate-th">ที่เก็บ</th>
+                            <th width="15%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
                             <td colspan="6" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่................../............................/....................
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
                             </td>
                         </tr>
                     </tfoot>
@@ -379,8 +387,11 @@
             </div>
         </div>
     </div>
-    
-    
+
+    <div id="sticker-print-template" class="print-only-sticker">
+        <div id="sticker-container"></div>
+    </div>
+
     <script src="drug_data.js"></script>
     <script src="app.js"></script>
 </body>
