@@ -1,13 +1,13 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwIbf8w_VSw5pCJXnUGtRgut8beeqG3wx2qkGbrU9fOHiaxbM5WA07FFBrZsbzxc3E3/exec';
 const WARD_ORDER = ['พุทธรักษา', 'จำปาทอง', 'ราชาวดี', 'ลีลาวดี', 'ฉัตรชบา', 'ECT', 'ER'];
 const THAI_MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-// 📌 อาร์เรย์สำหรับเดือนย่อ ในหน้าป้ายปริ้นท์
 const THAI_MONTHS_SHORT = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const app = {
     user: null, currentBoxId: null, currentBoxDept: null, currentBoxType: null, currentBoxName: null, currentBoxStatus: null,
     masterData: { departments: [], drugs: [] },
     allInventory: [], 
+    currentBoxDrugs: [], // 📌 เก็บรายการยาในกล่องปัจจุบัน
     allBoxes: [],     
     allLogs: [], 
     tomSelectInstance: null,
@@ -81,7 +81,6 @@ const app = {
         }
     },
 
-    // 📌 Helper ฟังก์ชันแปลงวันที่ (รองรับกรณีเป็นค่าว่าง)
     formatThaiShortDate(dateStr) {
         if (!dateStr || dateStr.toString().trim() === '') return '-';
         const d = new Date(dateStr);
@@ -345,6 +344,9 @@ const app = {
         document.getElementById('print-dept-name').innerText = dept;
         document.getElementById('print-box-name').innerText = boxName;
         
+        const checkAllEl = document.getElementById('check-all-stickers');
+        if (checkAllEl) checkAllEl.checked = false;
+
         this.navigateMenu('page-box-detail');
         
         document.getElementById('btn-add-drug').style.display = canEdit ? 'block' : 'none';
@@ -353,9 +355,10 @@ const app = {
 
         const res = await this.callAPI({ action: 'get_box_detail', boxId: boxId });
         if (res && res.status === 'success') {
+            this.currentBoxDrugs = res.data; // บันทึกรายการยาในกล่องนี้ไว้ใช้กับสติ๊กเกอร์
             const tbody = document.getElementById('detail-tbody');
             tbody.innerHTML = '';
-            if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่พบรายการยา</td></tr>';
+            if(res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่พบรายการยา</td></tr>';
 
             const today = new Date(); today.setHours(0,0,0,0);
             const threeMonths = new Date(today); threeMonths.setDate(today.getDate() + 90);
@@ -377,9 +380,7 @@ const app = {
                     if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
                         openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง"><i class="fas fa-cut"></i></button>`;
                     }
-                    
-                    // 📌 เพิ่มปุ่ม Delete รูปถังขยะ
-                    let deleteBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e74c3c; color:#e74c3c;" onclick="app.deleteDrug('${item.itemID}', '${item.drugName}')" title="ลบรายการยา"><i class="fas fa-trash"></i></button>`;
+                    let deleteBtn = `<button class="btn-outline no-print" style="border-color:#e74c3c; color:#e74c3c;" onclick="app.deleteDrug('${item.itemID}', '${item.drugName}')" title="ลบรายการยา"><i class="fas fa-trash"></i></button>`;
 
                     actionButtons = `
                         ${openPkgBtn}
@@ -391,11 +392,14 @@ const app = {
                 
                 tbody.innerHTML += `
                     <tr>
+                        <td class="no-print" style="text-align:center;">
+                            <input type="checkbox" class="sticker-checkbox" value="${item.itemID}">
+                        </td>
                         <td><b style="font-weight: 500;">${item.drugName}</b><br><span style="font-size:0.75rem; color:#999;">อัปเดต: ${new Date(item.lastUpdate).toLocaleDateString('th-TH')} | โดย: ${item.verifiedBy || '-'}</span></td>
-                        <td>${item.lotNumber}</td>
+                        <td>${item.lotNumber || '-'}</td>
                         <td><span style="font-size:0.85rem; color:var(--text-dark); background:#eee; padding:3px 8px; border-radius:4px;">${item.storageLoc || 'ในกล่อง'}</span></td>
-                        <td style="${textClass}">${item.expireDate} ${expLabel}</td>
-                        <td>${item.qty}</td>
+                        <td style="${textClass}">${item.expireDate || '-'} ${expLabel}</td>
+                        <td>${item.qty || '-'}</td>
                         <td class="no-print" style="white-space: nowrap;">${actionButtons}</td>
                     </tr>
                 `;
@@ -403,7 +407,79 @@ const app = {
         }
     },
 
-    // 📌 ฟังก์ชันลบรายการยา (Delete Drug)
+    // 📌 ฟังก์ชันติ๊กเลือก / ไม่เลือกทั้งหมด สำหรับปริ้นท์สติ๊กเกอร์
+    toggleCheckAllStickers(master) {
+        const checkboxes = document.querySelectorAll('.sticker-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+    },
+
+    // 📌 🏷️ ฟังก์ชันปริ้นท์สติ๊กเกอร์แปะซองยา (ขนาด 8.5 x 6 cm แบ่ง 4 ช่อง)
+    printStickers() {
+        const checkedBoxes = document.querySelectorAll('.sticker-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            return Swal.fire({ icon: 'warning', title: 'โปรดเลือกรายการยา', text: 'กรุณาติ๊กเลือกรายการยาที่ต้องการปริ้นท์สติ๊กเกอร์อย่างน้อย 1 รายการ' });
+        }
+
+        const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+        const selectedDrugs = this.currentBoxDrugs.filter(item => selectedIds.includes(item.itemID));
+
+        if (selectedDrugs.length === 0) return;
+
+        const stickerContainer = document.getElementById('sticker-container');
+        stickerContainer.innerHTML = '';
+
+        // แบ่งรายการยาออกเป็นชุดๆ ชุดละไม่เกิน 4 รายการ (1 แผ่น = 4 quadrants)
+        for (let i = 0; i < selectedDrugs.length; i += 4) {
+            const chunk = selectedDrugs.slice(i, i + 4);
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'sticker-page';
+
+            for (let slotIndex = 0; slotIndex < 4; slotIndex++) {
+                const item = chunk[slotIndex];
+                const boxDiv = document.createElement('div');
+                
+                if (item) {
+                    boxDiv.className = 'sticker-box';
+
+                    // ดึงหน่วยนับจาก DrugMaster ถ้ามี
+                    let unitStr = '';
+                    if (this.masterData && this.masterData.drugs) {
+                        const drugMaster = this.masterData.drugs.find(d => d.name === item.drugName);
+                        if (drugMaster && drugMaster.unit) unitStr = drugMaster.unit;
+                    }
+
+                    const expFormatted = this.formatThaiShortDate(item.expireDate);
+                    const qtyDisplay = item.qty ? `${item.qty} ${unitStr}`.trim() : '-';
+
+                    boxDiv.innerHTML = `
+                        <div class="sticker-drug-name">${item.drugName}</div>
+                        <div class="sticker-line">Lot: <b>${item.lotNumber || '-'}</b></div>
+                        <div class="sticker-line">จำนวน: <b>${qtyDisplay}</b></div>
+                        <div class="sticker-line">Exp: <b>${expFormatted}</b></div>
+                    `;
+                } else {
+                    // ช่องว่าง (กรณีเลือกไม่ถึง 4 รายการในแผ่นสุดท้าย)
+                    boxDiv.className = 'sticker-box empty-slot';
+                    boxDiv.innerHTML = `<div></div>`;
+                }
+
+                pageDiv.appendChild(boxDiv);
+            }
+
+            stickerContainer.appendChild(pageDiv);
+        }
+
+        const style = document.getElementById('print-page-style');
+        style.innerHTML = `@media print { @page { size: 85mm 60mm; margin: 0; } body { padding: 0; margin: 0; } }`;
+
+        document.body.classList.add('print-sticker-mode');
+        window.print();
+        setTimeout(() => {
+            document.body.classList.remove('print-sticker-mode');
+            style.innerHTML = '';
+        }, 1000);
+    },
+
     async deleteDrug(itemId, drugName) {
         const result = await Swal.fire({
             title: 'ยืนยันการลบ?',
@@ -490,7 +566,6 @@ const app = {
                     tableRows += `<td style="white-space: nowrap;">${formattedItemExp}</td>`;
                     
                     if (isFirstRowOfStorage) {
-                        // 📌 กำหนด class="col-storage" ให้ช่องนี้โดยเฉพาะ
                         tableRows += `<td rowspan="${totalRowsForStorage}" class="col-storage">${storageName}</td>`;
                         isFirstRowOfStorage = false;
                     }
@@ -515,7 +590,7 @@ const app = {
             style.innerHTML = '';
         }, 1000);
     },
-    
+
     showFilteredList(filterType) {
         this.currentReturnPage = 'page-filtered-list'; 
         this.currentFilterType = filterType; 
@@ -585,8 +660,6 @@ const app = {
                 if (item.drugName.toLowerCase().includes('salbutamol') || item.drugName.toLowerCase().includes('nebule')) {
                     openPkgBtn = `<button class="btn-outline no-print" style="margin-right:5px; border-color:#e67e22; color:#e67e22;" onclick="app.openPackage('${item.itemID}', '${item.drugName}')" title="แกะซอง"><i class="fas fa-cut"></i></button>`;
                 }
-                
-                // 📌 เพิ่มปุ่ม Delete 
                 let deleteBtn = `<button class="btn-outline no-print" style="border-color:#e74c3c; color:#e74c3c;" onclick="app.deleteDrug('${item.itemID}', '${item.drugName}')" title="ลบรายการยา"><i class="fas fa-trash"></i></button>`;
                 
                 actionBtn = `${openPkgBtn}<button class="btn-outline no-print" style="margin-right:5px;" onclick="app.openDrugModalFromGlobal('${itemJson}')" title="แก้ไขรายการ"><i class="fas fa-edit"></i></button>${deleteBtn}`;
@@ -840,7 +913,6 @@ const app = {
 
     closeModal() { document.getElementById('modal-drug').style.display = 'none'; },
 
-    // 📌 ฟังก์ชันบันทึกยา (ปรับให้ไม่บังคับ Exp/Qty ถ้าเป็นชั้นเก็บยา)
     async saveDrug() {
         const storageVal = document.getElementById('form-storage').value;
         const isShelf = storageVal.includes('ชั้นเก็บยา');
@@ -859,7 +931,6 @@ const app = {
         };
 
         if (!payload.drugName || !payload.verifiedBy) return Swal.fire({ icon: 'warning', text: "กรุณากรอกข้อมูลให้ครบถ้วน" });
-        // ถ้าไม่ใช่ชั้นเก็บยา จะบังคับให้ต้องกรอกวันหมดอายุ
         if (!isShelf && !payload.expireDate) return Swal.fire({ icon: 'warning', text: "ยาในกล่องจำเป็นต้องระบุวันหมดอายุ" });
 
         const res = await this.callAPI(payload);
