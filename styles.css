@@ -174,7 +174,7 @@ html, body {
 
     .sticker-page {
         width: 8.5cm;
-        height: 6cm;
+        height: 5.4cm;
         box-sizing: border-box;
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -196,8 +196,6 @@ html, body {
         font-family: 'Prompt', sans-serif;
         background: #fff;
         color: #000;
-        height: 5.4cm !important;
-        max-height: 5.4cm !important;
         overflow: hidden;
         border-radius: 4px;
     }
