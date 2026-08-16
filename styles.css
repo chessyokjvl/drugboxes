@@ -196,6 +196,8 @@ html, body {
         font-family: 'Prompt', sans-serif;
         background: #fff;
         color: #000;
+        height: 5.4cm !important;
+        max-height: 5.4cm !important;
         overflow: hidden;
         border-radius: 4px;
     }
