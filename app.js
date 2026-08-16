@@ -584,6 +584,21 @@ const app = {
         style.innerHTML = `@media print { @page { size: A4 landscape; margin: 0; } body { padding: 5mm; } }`;
 
         document.body.classList.add('print-label-mode');
+
+        // 1. สร้างวันที่ปัจจุบัน (รูปแบบ: 16 ส.ค. 2569)
+        const today = new Date();
+        const formattedDate = today.toLocaleDateString('th-TH', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+
+        // 2. นำวันที่ไปใส่ใน Template ทุกใบที่กำลังจะปริ้นท์
+        const dateSpans = document.querySelectorAll('.lbl-print-date');
+        dateSpans.forEach(span => {
+            span.innerText = formattedDate;
+        });
+        
         window.print();
         setTimeout(() => {
             document.body.classList.remove('print-label-mode');
