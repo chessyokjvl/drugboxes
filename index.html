@@ -330,10 +330,13 @@
         </div>
     </div>
 
+    <!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน -->
     <div id="box-label-template" class="print-only-label">
         <div class="a4-landscape-split">
+            <!-- ฝั่งซ้าย (A5) -->
             <div class="label-container">
-                <div class="label-header-compact">
+                <!-- 📌 เพิ่มคลาส spacing-top เพื่อดันหัวตารางลงมา 1 นิ้ว -->
+                <div class="label-header-compact spacing-top">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
                     <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
                 </div>
@@ -341,26 +344,28 @@
                     <thead>
                         <tr>
                             <th width="5%">ที่</th>
-                            <th width="38%">รายการ</th>
+                            <th width="45%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="15%" class="rotate-th">ที่เก็บ</th>
+                            <th width="8%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
                             <td colspan="6" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่ <span class="lbl-print-date"></span>
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
+            <!-- ฝั่งขวา (A5) แบบโคลน -->
             <div class="label-container">
-                <div class="label-header-compact">
+                <!-- 📌 เพิ่มคลาส spacing-top เพื่อดันหัวตารางลงมา 1 นิ้ว -->
+                <div class="label-header-compact spacing-top">
                     <div class="header-box-name"><span class="lbl-box-name"></span></div>
                     <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
                 </div>
@@ -368,18 +373,18 @@
                     <thead>
                         <tr>
                             <th width="5%">ที่</th>
-                            <th width="38%">รายการ</th>
+                            <th width="45%">รายการ</th>
                             <th width="8%">จำนวน</th>
                             <th width="15%">Lot</th>
                             <th width="19%">Expire</th>
-                            <th width="15%" class="rotate-th">ที่เก็บ</th>
+                            <th width="8%" class="rotate-th">ที่เก็บ</th>
                         </tr>
                     </thead>
                     <tbody class="lbl-tbody"></tbody>
                     <tfoot>
                         <tr>
                             <td colspan="6" class="footer-sig">
-                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่......../......../..........
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่ <span class="lbl-print-date"></span>
                             </td>
                         </tr>
                     </tfoot>
