@@ -330,7 +330,17 @@ html, body {
         font-size: 9pt;
     }
     
+    /* 📌 กำหนดระยะขอบกระดาษตอนพิมพ์: ดันลงมาจากขอบบน 1 นิ้ว (2.5 cm) */
     body.print-landscape { size: landscape; }
+    @media print {
+        @page {
+            size: A4 landscape;
+            margin-top: 2.5cm !important; /* 📌 ดันกรอบทั้งหมดตกลงมาจากขอบบน 1 นิ้ว */
+            margin-bottom: 0mm;
+            margin-left: 0mm;
+            margin-right: 0mm;
+        }
+    }
     
     /* ระบบ Print Section ของ Analytics */
     body.print-section-mode .page > *:not(.print-target) { display: none !important; }
