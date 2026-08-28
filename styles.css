@@ -177,14 +177,8 @@ html, body {
         height: 5.4cm;
         box-sizing: border-box;
         display: grid;
-        /* ✅ แก้ไขตรงนี้: แบ่งแค่ 2 คอลัมน์ แถวเดียว (ซ้าย-ขวา) */
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr; 
-        
-        /* 💡 (ทางเลือก) ถ้าอยากแบ่ง 2 ช่องแบบ บน-ล่าง ให้ใช้:
-           grid-template-columns: 1fr;
-           grid-template-rows: 1fr 1fr; 
-        */
+        grid-template-rows: 1fr 1fr;
         gap: 1.5mm;
         padding: 1.5mm;
         page-break-after: always;
@@ -211,19 +205,19 @@ html, body {
     }
 
     .sticker-drug-name {
-        font-size: 11pt; /* ✅ ขยายตัวอักษรชื่อยาจาก 8.5pt เป็น 11pt */
+        font-size: 8.5pt;
         font-weight: bold;
         line-height: 1.15;
         color: #000;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         word-break: break-word;
-        max-height: 2.5em; /* ปรับความสูงให้พอดีกับฟอนต์ที่ใหญ่ขึ้น */
+        max-height: 2.3em;
         overflow: hidden;
     }
 
     .sticker-line {
-        font-size: 9pt; /* ✅ ขยายตัวอักษรบรรทัดอื่นๆ จาก 7.5pt เป็น 9pt */
-        line-height: 1.3;
+        font-size: 7.5pt;
+        line-height: 1.2;
         color: #111;
         white-space: nowrap;
         overflow: hidden;
