@@ -165,11 +165,12 @@ html, body {
     body.print-label-mode #auth-container { display: none !important; }
     body.print-label-mode .print-only-label { display: block !important; width: 100%; height: 100%; }
 
-    /* 3. 🏷️ โหมดพิมพ์สติ๊กเกอร์แปะซองยา (ขนาด 8.5 x 6 cm แบ่ง 4 ช่อง) */
+    /* 3. 🏷️ โหมดพิมพ์สติ๊กเกอร์แปะซองยา (ขนาด 8.5 x 5.4 cm แบ่ง 2 ช่อง) */
     body.print-sticker-mode { background: #fff !important; margin: 0; padding: 0; }
     body.print-sticker-mode #app-container, 
     body.print-sticker-mode #auth-container,
-    body.print-sticker-mode .print-only-label { display: none !important; }
+    body.print-sticker-mode .print-only-label,
+    body.print-sticker-mode .page { display: none !important; } /* ซ่อนส่วนอื่นให้หมดตอนปริ้นท์สติ๊กเกอร์ */
     body.print-sticker-mode .print-only-sticker { display: block !important; width: 100%; }
 
     .sticker-page {
@@ -177,9 +178,15 @@ html, body {
         height: 5.4cm;
         box-sizing: border-box;
         display: grid;
+        /* แบ่ง 2 ช่องแบบ ซ้าย-ขวา */
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 1.5mm;
+        grid-template-rows: 1fr; 
+        
+        /* 💡 หากต้องการแบ่ง 2 ช่องแบบ บน-ล่าง แทน ให้สลับเป็น:
+           grid-template-columns: 1fr;
+           grid-template-rows: 1fr 1fr; 
+        */
+        gap: 2mm; 
         padding: 1.5mm;
         page-break-after: always;
         break-after: page;
@@ -188,16 +195,17 @@ html, body {
 
     .sticker-box {
         border: 1px dashed #444;
-        padding: 4px 6px;
+        padding: 6px 8px; /* เพิ่มพื้นที่ขอบด้านในให้อ่านง่าย */
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: space-between; /* ดันข้อความให้กระจายตัวสวยงาม ไม่ย้วย */
         font-family: 'Prompt', sans-serif;
         background: #fff;
         color: #000;
         overflow: hidden;
         border-radius: 4px;
+        height: 100%;
     }
 
     .sticker-box.empty-slot {
@@ -205,25 +213,25 @@ html, body {
     }
 
     .sticker-drug-name {
-        font-size: 8.5pt;
+        font-size: 11pt; /* ขยายขนาดชื่อยาให้เด่นชัด */
         font-weight: bold;
-        line-height: 1.15;
+        line-height: 1.2;
         color: #000;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
         word-break: break-word;
-        max-height: 2.3em;
+        max-height: 2.4em;
         overflow: hidden;
     }
 
     .sticker-line {
-        font-size: 7.5pt;
-        line-height: 1.2;
+        font-size: 9pt; /* ขยายบรรทัดรายละเอียด */
+        line-height: 1.3;
         color: #111;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
+    
     /* 📌 โครงสร้างแบ่งครึ่ง A4 แบบพอดีหน้ากระดาษ */
     .a4-landscape-split {
         display: flex;
