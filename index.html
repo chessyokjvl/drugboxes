@@ -51,6 +51,11 @@
                         <i class="fas fa-box-open stat-icon" style="color: var(--primary-green);"></i>
                         <div class="stat-info"><h4>กล่องยาในระบบ</h4><h2 id="stat-total-boxes">0</h2></div>
                     </div>
+                    <div class="stat-card warning" onclick="showExpiringBoxesGrid()">
+    <div class="stat-icon warning"><i class="fas fa-calendar-times text-danger"></i></div>
+    <div class="stat-info"><h4>วันหมดอายุกล่องยา</h4><h2>ตรวจสอบ <i class="fas fa-arrow-right text-muted" style="font-size: 1rem;"></i></h2>
+    </div>
+</div>
                     <div class="stat-card" onclick="app.showFilteredList('all')" title="ดูรายการยาทั้งหมด">
                         <i class="fas fa-pills stat-icon" style="color: #3498db;"></i>
                         <div class="stat-info"><h4>รายการยาทั้งหมด</h4><h2 id="stat-total-drugs">0</h2></div>
@@ -68,6 +73,20 @@
                         <div class="stat-info"><h4>หมดอายุ 3-6 เดือน</h4><h2 id="stat-exp-6m" style="color: var(--warning-orange);">0</h2></div>
                     </div>
                 </div>
+
+<div id="expiry-boxes-section" style="display: none; margin-top: 20px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 style="color: var(--danger); font-weight: 600;">
+            <i class="fas fa-exclamation-circle"></i> รายการกล่องยา (เรียงตามวันหมดอายุเร็วที่สุด)
+        </h4>
+        <button class="btn-outline" onclick="document.getElementById('expiry-boxes-section').style.display='none'">
+            <i class="fas fa-times"></i> ปิด
+        </button>
+    </div>
+    <!-- ใช้ ward-grid แบบเดียวกับหน้ากล่องยาหอผู้ป่วย -->
+    <div class="ward-grid" id="expiry-boxes-grid"></div>
+</div>
+                
                 <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการทำรายการล่าสุด</h3>
                 <div class="table-container">
                     <table class="data-table">
