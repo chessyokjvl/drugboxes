@@ -1239,14 +1239,17 @@ function showExpiringBoxesGrid() {
     const container = document.getElementById('expiry-boxes-section');
     const grid = document.getElementById('expiry-boxes-grid');
     
-    // สมมติว่าตัวแปรข้อมูลกล่องยาทั้งหมดของคุณชื่อ app.boxes หรือ boxesData
-    // (ปรับให้ตรงกับชื่อตัวแปรที่เก็บข้อมูลกล่องยาของคุณ)
-    let allBoxes = app.boxes || []; 
+    // ดึงข้อมูลกล่องยาและรายการยาทั้งหมดจากตัวแปรที่ถูกต้องของระบบ
+    let allBoxes = app.allBoxes || []; 
+    let allItems = app.allInventory || [];
 
     // 1. คำนวณวันหมดอายุที่ใกล้ที่สุดของแต่ละกล่อง
     let mappedBoxes = allBoxes.map(box => {
-        let exps = (box.items || [])
-            .map(item => new Date(item.expDate))
+        // หารายการยาที่อยู่ในกล่องนี้ เพื่อนำมาหาวันหมดอายุ
+        let boxItems = allItems.filter(item => item.boxName === box.boxName && item.department === box.department);
+
+        let exps = boxItems
+            .map(item => new Date(item.expireDate))
             .filter(d => !isNaN(d.getTime()));
             
         let earliestExpDate = exps.length > 0 ? new Date(Math.min(...exps)) : null;
@@ -1254,7 +1257,7 @@ function showExpiringBoxesGrid() {
         return {
             ...box,
             earliestExpDate: earliestExpDate,
-            earliestExpDisplay: earliestExpDate ? earliestExpDate.toLocaleDateString('th-TH') : 'ไม่มีข้อมูล'
+            earliestExpDisplay: earliestExpDate ? earliestExpDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) : 'ไม่มีข้อมูล'
         };
     });
 
@@ -1265,25 +1268,24 @@ function showExpiringBoxesGrid() {
         return a.earliestExpDate - b.earliestExpDate;
     });
 
-    // 3. สร้าง HTML Grid แบบเดียวกับหน้า "กล่องยาหอผู้ป่วย"
+    // 3. สร้าง HTML Grid
     grid.innerHTML = '';
     mappedBoxes.forEach(box => {
-        // กำหนดสีของกล่องตามประเภท หรือ สถานะการหมดอายุ (ปรับคลาสตามระบบเดิมของคุณ)
-        let boxClass = box.type === 'CPR box' ? 'box-cpr' : 
-                       box.type === 'Urgency box' ? 'box-urgency' : 'box-ward';
+        // กำหนดสีของกล่องตามประเภท
+        let boxClass = box.boxType === 'CPR box' ? 'box-cpr' : 
+                       box.boxType === 'Urgency box' ? 'box-urgency' : 'box-ward';
         
-        // เมื่อกดกล่อง ให้เรียกใช้ฟังก์ชันเข้าจัดการกล่องยา (เปลี่ยน app.openBox เป็นฟังก์ชันจริงของคุณ)
+        // เมื่อกดกล่อง ให้เปิดเข้าไปหน้าจัดการ (ส่งพารามิเตอร์ให้ครบตามฟังก์ชันเดิมของคุณ)
         let html = `
-            <div class="box-card ${boxClass}" onclick="app.openBox('${box.id}')">
-                <div class="box-title">${box.name}</div>
+            <div class="box-card ${boxClass}" onclick="app.openBoxDetail('${box.id}', '${box.department}', '${box.boxType}', '${box.boxName}', '${box.boxStatus}')">
+                <div class="box-title">${box.boxName}</div>
                 <div style="font-size: 0.85rem; margin-bottom: 5px;">
                     <span style="background: var(--primary-green); color: white; padding: 2px 6px; border-radius: 4px;">
                         ${box.department || 'ไม่ระบุหน่วยงาน'}
                     </span>
                 </div>
-                <div style="font-size: 0.85rem; color: #666;">รายการยาทั้งหมด: <strong>${box.items ? box.items.length : 0}</strong></div>
+                <div style="font-size: 0.85rem; color: #666;">รายการยาทั้งหมด: <strong>${box.totalDrugs || 0}</strong></div>
                 
-                <!-- ส่วนที่เพิ่มเข้ามา: แสดงวันหมดอายุ -->
                 <div style="margin-top: 8px; font-size: 0.85rem; color: var(--danger); font-weight: 600;">
                     <i class="fas fa-calendar-alt"></i> Exp: ${box.earliestExpDisplay}
                 </div>
@@ -1294,10 +1296,10 @@ function showExpiringBoxesGrid() {
         grid.innerHTML += html;
     });
 
-    // 4. แสดงผล Container
+    // 4. แสดงผล Container และเลื่อนหน้าจอลงมา
     container.style.display = 'block';
-    
-    // เลื่อนหน้าจอลงมาให้เห็น Grid ชัดเจน
-    container.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
 }
 window.onload = () => app.init();
