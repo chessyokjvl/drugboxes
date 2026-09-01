@@ -1299,5 +1299,5 @@ function showExpiringBoxesGrid() {
     
     // เลื่อนหน้าจอลงมาให้เห็น Grid ชัดเจน
     container.scrollIntoView({ behavior: 'smooth' });
-
+}
 window.onload = () => app.init();
