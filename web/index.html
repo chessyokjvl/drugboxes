@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1F5D3F">
+    <title>JVL Drug Boxes</title>
+    <link rel="icon" href="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="print.css">
+    <style id="print-page-style"></style>
+</head>
+<body>
+    <div id="progress" aria-hidden="true"></div>
+
+    <!-- ===================== เข้าสู่ระบบ / ลงทะเบียน ===================== -->
+    <div id="auth-container" hidden>
+        <div class="auth">
+            <section class="auth-brand">
+                <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="ตราโรงพยาบาลจิตเวชเลยราชนครินทร์">
+                <h1>JVL Drug Boxes</h1>
+                <p>ระบบติดตามกล่องยาฉุกเฉินและยาสต็อกวอร์ด<br>โรงพยาบาลจิตเวชเลยราชนครินทร์</p>
+                <ul class="auth-points">
+                    <li><i class="fas fa-heart-pulse"></i> CPR box และ Urgency box พร้อมใช้ทุกหอผู้ป่วย</li>
+                    <li><i class="fas fa-calendar-xmark"></i> รู้ล่วงหน้าก่อนยาหมดอายุ</li>
+                    <li><i class="fas fa-tag"></i> พิมพ์ป้ายกล่องและสติ๊กเกอร์ซองยาได้ทันที</li>
+                </ul>
+            </section>
+            <section class="auth-card" id="auth-card"></section>
+        </div>
+    </div>
+
+    <!-- ===================== แอปหลัก ===================== -->
+    <div id="app-container" class="shell" hidden>
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" href="#/dashboard">
+                <img src="https://www.rploei.go.th/ec2/wp-content/uploads/2017/08/cropped-cropped-cropped-3.png" alt="">
+                <span><b>JVL Drug Boxes</b><small>ยาสต็อกวอร์ด</small></span>
+            </a>
+            <nav class="nav" id="nav"></nav>
+            <div class="me" id="me-card"></div>
+        </aside>
+
+        <main class="main">
+            <header class="top-header">
+                <div class="search" role="search">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input id="global-search" type="search" placeholder="ค้นหายา, Lot หรือกล่อง" autocomplete="off" aria-label="ค้นหายา Lot หรือกล่อง">
+                    <kbd class="hide-sm">/</kbd>
+                    <div class="search-results" id="search-results" hidden></div>
+                </div>
+                <div class="top-right">
+                    <span class="today" id="today-label"></span>
+                </div>
+            </header>
+            <div id="view" class="view" tabindex="-1"></div>
+        </main>
+
+        <nav class="tabbar no-print" id="tabbar"></nav>
+    </div>
+
+    <!-- หน้าต่างแก้ไข (Drawer) -->
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="drawer" id="drawer" aria-modal="true" role="dialog" hidden></aside>
+
+    <!-- รายงานสำหรับพิมพ์ (สร้างเมื่อกดพิมพ์) -->
+    <div id="report-print"></div>
+
+    <!-- 📌 โครงสร้าง Template ป้ายบันทึกแบบ 2 ฝั่ง ซ้าย-ขวา สำหรับกระดาษ A4 แนวนอน (คงตามต้นฉบับ) -->
+    <div id="box-label-template" class="print-only-label">
+        <div class="a4-landscape-split">
+            <!-- ฝั่งซ้าย (A5) -->
+            <div class="label-container">
+                <div class="label-header-compact spacing-top">
+                    <div class="header-box-name"><span class="lbl-box-name"></span></div>
+                    <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
+                </div>
+                <table class="label-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">ที่</th>
+                            <th width="45%">รายการ</th>
+                            <th width="8%">จำนวน</th>
+                            <th width="15%">Lot</th>
+                            <th width="19%">Expire</th>
+                            <th width="8%" class="rotate-th">ที่เก็บ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="lbl-tbody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่ <span class="lbl-print-date"></span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- ฝั่งขวา (A5) แบบโคลน -->
+            <div class="label-container">
+                <div class="label-header-compact spacing-top">
+                    <div class="header-box-name"><span class="lbl-box-name"></span></div>
+                    <div class="header-exp">วันที่กล่อง Expire: <span class="lbl-box-exp"></span></div>
+                </div>
+                <table class="label-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">ที่</th>
+                            <th width="45%">รายการ</th>
+                            <th width="8%">จำนวน</th>
+                            <th width="15%">Lot</th>
+                            <th width="19%">Expire</th>
+                            <th width="8%" class="rotate-th">ที่เก็บ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="lbl-tbody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="footer-sig">
+                                เภสัชกรผู้ตรวจสอบ......................................................... วันที่ <span class="lbl-print-date"></span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🏷️ สติ๊กเกอร์แปะซองยา 8.5 x 5.4 cm (คงตามต้นฉบับ) -->
+    <div id="sticker-print-template" class="print-only-sticker">
+        <div id="sticker-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
