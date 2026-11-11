@@ -257,3 +257,24 @@
     #report-print .cal-event.exp6m { background-color: #f39c12; }
     #report-print .cal-event.ok { background-color: #3D9962; }
 }
+
+/* =====================================================================
+   v2: QR ประจำกล่องใต้ตารางป้ายกล่อง
+   ไม่แก้กฎเดิมของป้าย — ตารางยังอยู่ตำแหน่งเดิม QR ใช้พื้นที่ว่างด้านล่าง
+   ถ้ารายการยามากจนพื้นที่ไม่พอ กล่อง QR จะหดและถูกซ่อนเอง (ไม่ดันตารางล้นหน้า)
+   ===================================================================== */
+.label-qr { display: none; }
+@media print {
+    .label-container > .label-table { flex-shrink: 0; }
+    body.print-label-mode .label-qr {
+        display: flex; align-items: stretch; gap: 4mm;
+        flex: 0 1 34mm; min-height: 0; overflow: hidden;
+        padding: 3mm 4mm; border-top: 1px dashed #999;
+        font-family: 'Prompt', sans-serif; font-size: 8pt; line-height: 1.45; color: #333;
+    }
+    body.print-label-mode .label-qr.too-small { display: none; }
+    .lbl-qr-img { height: 100%; max-height: 28mm; aspect-ratio: 1 / 1; flex: none; }
+    .lbl-qr-text { align-self: center; }
+    .lbl-qr-img svg { width: 100%; height: 100%; display: block; }
+    .lbl-qr-text b { display: block; font-size: 9pt; color: #000; margin-bottom: 1mm; }
+}

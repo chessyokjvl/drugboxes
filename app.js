@@ -125,7 +125,7 @@ function toast(msg, icon = 'success') {
    สถานะข้อมูล (อัปเดตเฉพาะส่วนที่เปลี่ยน ไม่ต้องโหลดใหม่ทั้งหมด)
    --------------------------------------------------------------------- */
 function applyBootstrap(d) {
-    Object.assign(S, { me: d.me, settings: d.settings, departments: d.departments, boxTypes: d.boxTypes, boxes: d.boxes, items: d.items, drugs: d.drugs, recentLogs: d.recentLogs, loaded: true });
+    Object.assign(S, { me: d.me, settings: d.settings, departments: d.departments, boxTypes: d.boxTypes, boxes: d.boxes, items: d.items, drugs: d.drugs, recentLogs: d.recentLogs, openEvents: d.openEvents || [], loaded: true });
 }
 function upsertItem(it) {
     const i = S.items.findIndex(x => x.id === it.id);
@@ -135,14 +135,10 @@ function upsertBoxes(list = []) {
     list.forEach(b => { const i = S.boxes.findIndex(x => x.id === b.id); if (i >= 0) S.boxes[i] = b; else S.boxes.push(b); });
 }
 async function refreshLogs() {
-    try { const d = await api('bootstrap', {}, { silent: true }); S.recentLogs = d.recentLogs; S.drugs = d.drugs; } catch { /* ไม่เป็นไร */ }
+    try { const d = await api('bootstrap', {}, { silent: true }); S.recentLogs = d.recentLogs; S.drugs = d.drugs; S.openEvents = d.openEvents || []; S.boxes = d.boxes; renderChrome(); } catch { /* ไม่เป็นไร */ }
 }
-const canEdit = boxOrDeptId => {
-    if (!S.me) return false;
-    if (S.me.isPharm) return true;
-    const deptId = typeof boxOrDeptId === 'object' ? boxOrDeptId.departmentId : boxOrDeptId;
-    return S.me.departmentId === deptId;
-};
+/* แก้ไขรายการยาได้เฉพาะผู้จัดยาของกลุ่มงานเภสัชกรรม (ตรวจซ้ำที่ server) */
+const canEdit = () => !!(S.me && S.me.isPacker);
 const itemsOf = boxId => S.items.filter(i => i.boxId === boxId);
 const drugOf = it => byId(S.drugs, it.drugId);
 
@@ -180,6 +176,7 @@ function showAuth(view = 'login') {
             <form id="f-reg">
                 <label class="field"><span>Username</span><input class="input" name="username" required autocomplete="username"></label>
                 <label class="field"><span>ชื่อ-สกุล (ใช้ในช่องผู้ตรวจสอบ)</span><input class="input" name="displayName" required></label>
+                <label class="field"><span>ตำแหน่ง</span><select class="select input" name="position" required><option value="">เลือกตำแหน่ง</option>${POSITIONS.map(p => `<option>${p}</option>`).join('')}</select></label>
                 <label class="field"><span>Password <small>อย่างน้อย 6 ตัวอักษร</small></span><input class="input" type="password" name="password" minlength="6" required autocomplete="new-password"></label>
                 <label class="field"><span>E-mail</span><input class="input" type="email" name="email" required autocomplete="email"></label>
                 <label class="field"><span>หน่วยงาน</span><select class="select input" name="departmentId" required><option value="">กำลังโหลด…</option></select></label>
@@ -264,6 +261,7 @@ function skeleton() {
    ===================================================================== */
 const NAV = [
     { r: 'dashboard', i: 'fa-table-cells-large', t: 'หน้าหลัก' },
+    { r: 'tasks', i: 'fa-list-check', t: 'งานรอดำเนินการ', short: 'งาน' },
     { r: 'boxes', i: 'fa-briefcase-medical', t: 'กล่องยา' },
     { r: 'list', i: 'fa-pills', t: 'รายการยา' },
     { r: 'calendar', i: 'fa-calendar-days', t: 'ปฏิทินวันหมดอายุ', short: 'ปฏิทิน' },
@@ -272,22 +270,41 @@ const NAV = [
     { r: 'settings', i: 'fa-gear', t: 'ตั้งค่า' },
 ];
 function renderChrome() {
-    const sent = S.boxes.filter(b => b.status === 'ส่งปรับแก้').length;
     const risk = S.items.filter(i => i.expStatus === 'expired' || i.expStatus === 'exp3m').length;
-    const pill = { boxes: sent, list: risk };
-    $('#nav').innerHTML = NAV.map((n, i) => `${i === 6 ? '<div class="sep"></div>' : ''}<a href="#/${n.r}" data-r="${n.r}"><i class="fas ${n.i}"></i>${n.t}${pill[n.r] ? `<span class="pill" title="ต้องดำเนินการ">${pill[n.r]}</span>` : ''}</a>`).join('');
-    const tabs = [NAV[0], NAV[1], NAV[2], NAV[3], { r: 'more', i: 'fa-bars', t: 'เมนู' }];
+    const pill = { tasks: taskCount(), list: risk };
+    $('#nav').innerHTML = NAV.map((n, i) => `${n.r === 'settings' ? '<div class="sep"></div>' : ''}<a href="#/${n.r}" data-r="${n.r}"><i class="fas ${n.i}"></i>${n.t}${pill[n.r] ? `<span class="pill" title="ต้องดำเนินการ">${pill[n.r]}</span>` : ''}</a>`).join('');
+    const tabs = [NAV[0], NAV[1], NAV[2], NAV[3], { r: 'more', i: 'fa-bars', t: 'เมนู' }];   // หน้าหลัก งาน กล่องยา รายการยา เมนู
     $('#tabbar').innerHTML = tabs.map(n => `<a href="#/${n.r}" data-r="${n.r}"><i class="fas ${n.i}"></i>${n.short || n.t}${pill[n.r] ? `<span class="pill">${pill[n.r]}</span>` : ''}</a>`).join('');
     const me = S.me;
     $('#me-card').innerHTML = `<span class="av">${esc((me.displayName || me.username).trim().charAt(0))}</span>
-        <div><b>${esc(me.displayName || me.username)}</b><small>${esc(roleName(me.role))}${me.department ? ' · ' + esc(shortDept(me.departmentId)) : ''}</small></div>
+        <div><b>${esc(me.displayName || me.username)}</b><small>${esc(me.position || roleName(me.role))}${me.department ? ' · ' + esc(shortDept(me.departmentId)) : ''}</small></div>
         <button title="ออกจากระบบ" aria-label="ออกจากระบบ" id="btn-logout"><i class="fas fa-right-from-bracket"></i></button>`;
     $('#btn-logout').onclick = logout;
     const t = new Date();
     $('#today-label').textContent = `วัน${['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][t.getDay()]}ที่ ${t.getDate()} ${THAI_MONTHS[t.getMonth()]} ${t.getFullYear() + 543}`;
     highlightNav();
 }
-const roleName = r => ({ 'God Admin': 'ผู้ดูแลระบบ', Admin: 'ผู้ดูแลระบบ', Pharmacist: 'เภสัชกร', User: 'ผู้ใช้งานหอผู้ป่วย' }[r] || r);
+/* งานที่ผู้ใช้คนนี้ต้องทำ: ห้องยา = คำขอค้าง + รอตรวจสอบ / หอผู้ป่วย = รอรับกล่อง + ถึงรอบตรวจเช็ค */
+function myTasks() {
+    const me = S.me, mine = b => me.seesAll ? true : b.departmentId === me.departmentId;
+    const own = b => b.departmentId === me.departmentId;
+    return {
+        requests: me.isPacker ? S.boxes.filter(b => b.openCount > 0) : [],
+        verify: me.isPharmacist ? S.boxes.filter(b => b.pendingVerify && !b.openCount) : [],
+        receive: S.boxes.filter(b => b.stage === 'returning' && (me.seesAll ? !me.isPacker || own(b) : mine(b))),
+        check: S.boxes.filter(b => b.checkOverdue && (me.isPacker ? own(b) : mine(b))),
+        waiting: !me.isPacker ? S.boxes.filter(b => b.openCount > 0 && mine(b)) : [],
+    };
+}
+function taskCount() { const t = myTasks(); return t.requests.length + t.verify.length + t.receive.length + t.check.length; }
+const POSITIONS = ['เภสัชกร', 'เจ้าพนักงานเภสัชกรรม', 'พนักงานประจำห้องยา', 'เจ้าพนักงานพัสดุ', 'พยาบาล', 'อื่นๆ'];
+const roleName = r => ({ 'God Admin': 'ผู้ดูแลระบบ', Admin: 'ผู้ดูแลระบบ', Pharmacist: 'เภสัชกร (เดิม)', User: 'ผู้ใช้งานทั่วไป' }[r] || r);
+function abilityText(u) {
+    if (u.isAdmin) return 'ผู้ดูแลระบบ: ทำได้ทุกอย่าง';
+    if (u.isPharmacist) return 'เภสัชกร: จัดยา + ตรวจสอบกล่อง';
+    if (u.isPacker) return 'ผู้จัดยา: เพิ่ม/แก้ไขยาในกล่อง';
+    return 'หอผู้ป่วย: ดูและบันทึกงานเฉพาะกล่องของหน่วยงานตัวเอง';
+}
 const shortDept = id => (byId(S.departments, id) || {}).short || '';
 function highlightNav() {
     const r = (location.hash.split('/')[1] || 'dashboard').split('?')[0];
@@ -347,7 +364,7 @@ function route() {
     const params = new URLSearchParams(qs || '');
     const v = $('#view');
     const views = {
-        dashboard: viewDashboard, boxes: viewBoxes, box: () => viewBox(Number(parts[1]), params), list: () => viewList(parts[1] || 'all', params),
+        dashboard: viewDashboard, tasks: viewTasks, boxes: viewBoxes, box: () => viewBox(Number(parts[1]), params), list: () => viewList(parts[1] || 'all', params),
         calendar: viewCalendar, reports: viewReports, manual: () => viewManual(parts[1] ? decodeURIComponent(parts[1]) : null),
         settings: () => viewSettings(parts[1] || 'profile'), more: viewMore,
     };
@@ -366,17 +383,20 @@ function viewDashboard(v) {
     const c = { expired: 0, exp3m: 0, exp6m: 0 };
     S.items.forEach(i => { if (c[i.expStatus] !== undefined) c[i.expStatus]++; });
     const qty = S.items.reduce((s, i) => s + (i.qty || 0), 0);
-    const sent = S.boxes.filter(b => b.status === 'ส่งปรับแก้');
+    const tk = myTasks();
     const expiredBoxes = [...new Set(S.items.filter(i => i.expStatus === 'expired').map(i => i.boxId))].map(id => byId(S.boxes, id)).filter(Boolean);
 
     let alerts = '';
     if (c.expired) alerts += `<a class="alert expired" href="#/list/expired"><i class="fas fa-circle-exclamation"></i><span><b>มียาหมดอายุแล้ว ${c.expired} รายการ</b> ใน ${expiredBoxes.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูรายการ</span></a>`;
-    if (sent.length) alerts += `<a class="alert sent" href="#/boxes?status=sent"><i class="fas fa-box-open"></i><span><b>กล่องรอเภสัชฯ ปรับแก้ ${sent.length} กล่อง</b> ${sent.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูกล่อง</span></a>`;
+    if (tk.requests.length) alerts += `<a class="alert sent" href="#/tasks"><i class="fas fa-inbox"></i><span><b>คำขอจากหอผู้ป่วย ${tk.requests.length} กล่อง</b> ${tk.requests.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูงาน</span></a>`;
+    if (tk.verify.length) alerts += `<a class="alert sent" href="#/tasks"><i class="fas fa-user-check"></i><span><b>รอเภสัชกรตรวจสอบ ${tk.verify.length} กล่อง</b> ${tk.verify.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูงาน</span></a>`;
+    if (tk.receive.length) alerts += `<a class="alert recv" href="#/tasks"><i class="fas fa-box-archive"></i><span><b>กล่องพร้อมรับคืน ${tk.receive.length} กล่อง</b> ${tk.receive.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูงาน</span></a>`;
+    if (tk.check.length && !S.me.isPacker) alerts += `<a class="alert recv" href="#/tasks"><i class="fas fa-clipboard-check"></i><span><b>ถึงรอบตรวจเช็คกล่อง ${tk.check.length} กล่อง</b> ${tk.check.map(b => esc(b.name)).join(', ')}</span><span class="go">ดูงาน</span></a>`;
     const soon = S.items.filter(i => i.expStatus === 'exp3m' && i.daysLeft !== null && i.daysLeft <= 30).length;
     if (soon) alerts += `<a class="alert exp3m" href="#/list/exp3m?within=30"><i class="fas fa-hourglass-half"></i><span><b>${soon} รายการจะหมดอายุภายใน 30 วัน</b> ควรเตรียมยาทดแทน</span><span class="go">ดูรายการ</span></a>`;
 
     v.innerHTML = `
-        <div class="page-head"><div><h1>ความพร้อมกล่องยา</h1><p>สถานะกล่องยาทุกหอผู้ป่วย ณ วันนี้ เรียงตามประเภทกล่อง</p></div></div>
+        <div class="page-head"><div><h1>ความพร้อมกล่องยา</h1><p>${S.me.seesAll ? 'สถานะกล่องยาทุกหอผู้ป่วย ณ วันนี้ เรียงตามประเภทกล่อง' : 'สถานะกล่องยาของ ' + esc(S.me.department || 'หน่วยงานของท่าน') + ' ณ วันนี้'}</p></div></div>
         ${alerts ? `<div class="alerts">${alerts}</div>` : ''}
         ${boardHtml()}
         <div class="stats">
@@ -420,7 +440,7 @@ function slotHtml(b, compact) {
     const t = byId(S.boxTypes, b.boxTypeId);
     const n = b.counts;
     return `<a class="slot" data-st="${b.worst}" href="#/box/${b.id}" title="${esc(b.name)} — ${esc(ST_LABEL[b.worst])}">
-        ${b.status === 'ส่งปรับแก้' ? '<span class="sent">รอเภสัชฯ</span>' : ''}
+        ${b.stage !== 'ready' ? `<span class="sent" style="background:${STAGE[b.stage].c}">${STAGE[b.stage].short}</span>` : b.checkOverdue ? '<span class="sent due">ถึงรอบตรวจ</span>' : ''}
         <span class="nm" data-type="${esc(t ? t.name : '')}">${esc(name)}</span>
         <span class="dt${days !== null && days < 0 ? ' over' : ''}">${b.boxExp ? (days < 0 ? 'เลยวัน Exp ' : 'Exp ') + thDate(b.boxExp, true) : 'ไม่มีข้อมูล'}</span>
         <span class="runway"><i style="width:${pct}%"></i></span>
@@ -474,17 +494,47 @@ function viewBoxes(v) {
 /* =====================================================================
    รายละเอียดกล่อง
    ===================================================================== */
+/* ---------- ขั้นตอนของกล่อง ---------- */
+const STAGE = {
+    requested: { t: 'รอห้องยาดำเนินการ', short: 'รอห้องยา', i: 'fa-inbox', c: '#D64535' },
+    verifying: { t: 'จัดยาแล้ว รอเภสัชกรตรวจสอบ', short: 'รอตรวจสอบ', i: 'fa-user-check', c: '#B86E00' },
+    returning: { t: 'เภสัชกรตรวจสอบแล้ว รอหอผู้ป่วยรับกล่อง', short: 'รอรับกล่อง', i: 'fa-truck-medical', c: '#2980b9' },
+    ready:     { t: 'พร้อมใช้งาน', short: 'พร้อมใช้', i: 'fa-circle-check', c: '#2B7149' },
+};
+const EV = {
+    RECEIVE:  { t: 'รับกล่องคืน', i: 'fa-box-archive', c: '#2980b9', d: 'รับกล่องยาที่เภสัชกรตรวจสอบแล้วกลับมาที่หน่วยงาน' },
+    CHECK:    { t: 'ตรวจเช็คกล่อง', i: 'fa-clipboard-check', c: '#1F5D3F', d: 'ตรวจซีล จำนวน และวันหมดอายุตามรอบ' },
+    USE:      { t: 'บันทึกการใช้ยา', i: 'fa-syringe', c: '#8e44ad', d: 'ใช้ยาในกล่องไปแล้ว ให้ห้องยาเติมคืน' },
+    REQUEST:  { t: 'ขอเติม/เปลี่ยนยา', i: 'fa-rotate', c: '#E08A0B', d: 'ขอให้ห้องยาเติมหรือเปลี่ยนยาในกล่อง' },
+    ISSUE:    { t: 'แจ้งปัญหา', i: 'fa-triangle-exclamation', c: '#D64535', d: 'ซีลขาด กล่องชำรุด ยาไม่ครบ หรือปัญหาอื่น' },
+    PACKED:   { t: 'จัดยาเสร็จ', i: 'fa-basket-shopping', c: '#7f8c8d' },
+    VERIFIED: { t: 'เภสัชกรตรวจสอบ', i: 'fa-user-check', c: '#27ae60' },
+};
+const canWard = b => !!S.me && (S.me.seesAll || S.me.departmentId === b.departmentId);
+const openEventsOf = boxId => (S.openEvents || []).filter(e => e.boxId === boxId);
+function eventLine(e) {
+    const m = EV[e.type] || { t: e.type, i: 'fa-circle', c: '#7f8c8d' };
+    const items = (e.items || []).map(x => `${esc(x.drugName)} ×${x.qty}`).join(', ');
+    return `<li class="ev-row"><span class="ev-ic" style="background:${m.c}"><i class="fas ${m.i}"></i></span><div>
+        <b>${m.t}</b>${e.category ? ` <span class="tag">${esc(e.category)}</span>` : ''}${e.isOpen ? ' <span class="tag warn">รอดำเนินการ</span>' : ''}
+        ${items ? `<div>${items}</div>` : ''}${e.note ? `<div class="muted">“${esc(e.note)}”</div>` : ''}
+        <small class="faint">${thDateTime(e.at)} · ${esc(e.by || '-')}${e.resolvedAt ? ` · ปิดโดย ${esc(e.resolvedBy || '-')} ${thDateTime(e.resolvedAt)}` : ''}</small></div></li>`;
+}
+
 function viewBox(boxId, params) {
     const v = $('#view');
     const b = byId(S.boxes, boxId);
-    if (!b) { v.innerHTML = `<a class="back" href="#/boxes"><i class="fas fa-arrow-left"></i> กล่องยาทั้งหมด</a><div class="empty-state"><i class="fas fa-box"></i>ไม่พบกล่องยานี้</div>`; return; }
-    const edit = canEdit(b);
+    if (!b) { v.innerHTML = `<a class="back" href="#/boxes"><i class="fas fa-arrow-left"></i> กล่องยาทั้งหมด</a><div class="empty-state"><i class="fas fa-box"></i>ไม่พบกล่องยานี้ หรือกล่องนี้ไม่ได้อยู่ในหน่วยงานของท่าน</div>`; return; }
+    const pack = S.me.isPacker, rx = S.me.isPharmacist;
+    // ปุ่มงานหอผู้ป่วย: แสดงให้สมาชิกของหน่วยงานนั้น (ห้องยาไม่ต้องเห็น ยกเว้นเป็นกล่องของห้องยาเอง)
+    const ward = pack ? S.me.departmentId === b.departmentId : canWard(b);
     const sortKey = UI.sort.box || { col: 'drugName', asc: true };
-    let items = itemsOf(boxId);
-    items = sortRows(items, sortKey.col, sortKey.asc);
+    const items = sortRows(itemsOf(boxId), sortKey.col, sortKey.asc);
     const hl = Number(params.get('hl')) || null;
     const t = byId(S.boxTypes, b.boxTypeId);
-    const sentByMe = b.status === 'ส่งปรับแก้';
+    const st = STAGE[b.stage] || STAGE.ready;
+    const opens = openEventsOf(b.id);
+    const actions = ['RECEIVE', 'CHECK', 'USE', 'REQUEST', 'ISSUE'];
 
     v.innerHTML = `
         <a class="back" href="#/boxes"><i class="fas fa-arrow-left"></i> กล่องยาทั้งหมด</a>
@@ -494,26 +544,38 @@ function viewBox(boxId, params) {
                 <h1>${esc(b.name)}</h1>
                 <div class="facts">
                     <span><b>${b.itemCount}</b> รายการ · <b>${b.qtyTotal}</b> ชิ้น</span>
-                    <span>ตรวจกล่องล่าสุด <b>${b.stockTakeAt ? thDateTime(b.stockTakeAt) : 'ยังไม่เคยบันทึก'}</b>${b.stockTakeBy ? ` โดย ${esc(b.stockTakeBy)}` : ''}</span>
+                    <span>ตรวจเช็คล่าสุด <b>${b.stockTakeAt ? thDateTime(b.stockTakeAt) : 'ยังไม่เคยบันทึก'}</b>${b.stockTakeBy ? ` โดย ${esc(b.stockTakeBy)}` : ''}</span>
+                    <span${b.checkOverdue ? ' style="color:var(--st-exp3m)"' : ''}>รอบตรวจถัดไป <b>${b.checkDue ? thDate(b.checkDue) : 'ควรตรวจเช็คตอนนี้'}</b></span>
                     ${b.counts.expired ? `<span style="color:${ST_COLOR.expired}"><b>${b.counts.expired}</b> รายการหมดอายุแล้ว</span>` : ''}
                     ${b.counts.exp3m ? `<span style="color:${ST_COLOR.exp3m}"><b>${b.counts.exp3m}</b> รายการหมดอายุภายใน 3 เดือน</span>` : ''}
                 </div>
-                ${sentByMe ? `<div class="box-status"><i class="fas fa-box-open"></i> ส่งให้เภสัชฯ ปรับแก้เมื่อ ${thDateTime(b.statusAt)}${b.statusBy ? ' โดย ' + esc(b.statusBy) : ''}${b.statusNote ? ` — "${esc(b.statusNote)}"` : ''}</div>` : ''}
+                <div class="stage" style="--sc:${st.c}"><i class="fas ${st.i}"></i><span><b>${st.t}</b>
+                    ${b.stage === 'returning' ? `<small>ตรวจสอบโดย ${esc(b.pharmVerifiedBy || '-')} ${thDateTime(b.pharmVerifiedAt)}</small>` : ''}
+                    ${b.stage === 'ready' && b.pharmVerifiedAt ? `<small>เภสัชกรตรวจสอบล่าสุด ${esc(b.pharmVerifiedBy || '-')} ${thDateTime(b.pharmVerifiedAt)}</small>` : ''}</span></div>
             </div>
             <div class="boxexp"><small>วันที่กล่อง Expire</small><b>${b.boxExp ? thDate(b.boxExp) : '-'}</b><em>${b.boxExp && b.boxExp < S.settings.today ? '<span style="color:var(--st-exp3m);font-weight:600">เลยวันหมดอายุกล่องแล้ว ควรเปลี่ยนยาและพิมพ์ป้ายใหม่</span><br>' : ''}${b.earliestExp ? `ยาหมดเร็วสุด ${thDate(b.earliestExp)}` : ''}</em></div>
         </section>
 
+        ${ward ? `<section class="ward-actions" aria-label="บันทึกงานของหอผู้ป่วย">${actions.map(k => `
+            <button class="wa${k === 'RECEIVE' && b.stage === 'returning' ? ' hot' : ''}${k === 'CHECK' && b.checkOverdue ? ' due' : ''}" data-ev="${k}" style="--ac:${EV[k].c}">
+                <i class="fas ${EV[k].i}"></i><b>${EV[k].t}</b><small>${k === 'RECEIVE' && b.stage === 'returning' ? 'กล่องพร้อมแล้ว' : k === 'CHECK' && b.checkOverdue ? 'ถึงรอบตรวจ' : EV[k].d}</small></button>`).join('')}
+        </section>` : ''}
+
+        ${opens.length ? `<section class="panel section open-box"><div class="panel-head"><h2>คำขอที่รอห้องยาดำเนินการ (${opens.length})</h2>
+            ${rx ? `<button class="btn solid-ok" id="b-verify"><i class="fas fa-user-check"></i> ตรวจสอบและปิดคำขอ</button>` : ''}</div>
+            <ul class="ev-list">${opens.map(eventLine).join('')}</ul></section>` : ''}
+
         <div class="toolbar">
-            ${edit ? `<button class="btn primary" id="b-add"><i class="fas fa-plus"></i> เพิ่มยา</button>` : ''}
-            ${edit ? `<button class="btn" id="b-stk" title="ยืนยันว่าตรวจยา จำนวน และวันหมดอายุในกล่องตรงกับของจริงแล้ว"><i class="fas fa-clipboard-check"></i> ยืนยันตรวจกล่องครบ</button>` : ''}
-            ${edit && !sentByMe ? `<button class="btn danger" id="b-send"><i class="fas fa-paper-plane"></i> ส่งเภสัชฯ ปรับแก้</button>` : ''}
-            ${S.me.isPharm && sentByMe ? `<button class="btn solid-ok" id="b-clear"><i class="fas fa-circle-check"></i> เคลียร์สถานะ (ปรับแก้แล้ว)</button>` : ''}
+            ${pack ? `<button class="btn primary" id="b-add"><i class="fas fa-plus"></i> เพิ่มยา</button>` : ''}
+            ${pack && !rx && (b.pendingVerify || opens.length) ? `<button class="btn" id="b-packed"><i class="fas fa-basket-shopping"></i> จัดยาเสร็จ ส่งเภสัชกรตรวจ</button>` : ''}
+            ${rx && !opens.length && b.pendingVerify ? `<button class="btn solid-ok" id="b-verify"><i class="fas fa-user-check"></i> เภสัชกรตรวจสอบกล่อง</button>` : ''}
             <span class="grow"></span>
             <div class="menu">
                 <button class="btn" id="b-print" aria-haspopup="true"><i class="fas fa-print"></i> พิมพ์ <i class="fas fa-chevron-down" style="font-size:11px"></i></button>
                 <div class="menu-list" id="b-print-menu" hidden>
-                    <button data-p="label"><i class="fas fa-tag"></i> ป้ายกล่อง (A4 แนวนอน 2 ฝั่ง)</button>
-                    <button data-p="sticker"><i class="fas fa-note-sticky"></i> สติ๊กเกอร์แปะซองยา (ติ๊กเลือกรายการ)</button>
+                    ${pack ? `<button data-p="label"><i class="fas fa-tag"></i> ป้ายกล่อง + QR (A4 แนวนอน 2 ฝั่ง)</button>
+                    <button data-p="sticker"><i class="fas fa-note-sticky"></i> สติ๊กเกอร์แปะซองยา (ติ๊กเลือกรายการ)</button>` : ''}
+                    <button data-p="qr"><i class="fas fa-qrcode"></i> แสดง QR Code ของกล่อง</button>
                     <button data-p="report"><i class="fas fa-file-lines"></i> รายงานสถานะกล่อง</button>
                     <button data-p="csv"><i class="fas fa-file-csv"></i> Export Excel (CSV)</button>
                 </div>
@@ -522,29 +584,34 @@ function viewBox(boxId, params) {
 
         <div class="panel"><div class="tbl-wrap"><table class="tbl cards" id="box-tbl">
             <thead><tr>
-                <th style="width:40px"><input type="checkbox" id="chk-all" title="เลือกทั้งหมดสำหรับพิมพ์สติ๊กเกอร์" aria-label="เลือกทั้งหมด"></th>
+                ${pack ? `<th style="width:40px"><input type="checkbox" id="chk-all" title="เลือกทั้งหมดสำหรับพิมพ์สติ๊กเกอร์" aria-label="เลือกทั้งหมด"></th>` : ''}
                 ${th('drugName', 'ชื่อยา', 'box')}${th('lotNumber', 'Lot', 'box')}${th('storageLoc', 'แหล่งเก็บ', 'box')}${th('expireDate', 'วันหมดอายุ', 'box')}${th('qty', 'จำนวน', 'box', 'num')}
                 <th></th></tr></thead>
-            <tbody>${items.length ? items.map(it => itemRow(it, edit, it.id === hl)).join('') : `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-pills"></i>ยังไม่มีรายการยาในกล่องนี้${edit ? '<br><br><button class="btn primary" onclick="openItemDrawer(' + b.id + ')"><i class="fas fa-plus"></i> เพิ่มยารายการแรก</button>' : ''}</div></td></tr>`}</tbody>
-        </table></div></div>`;
+            <tbody>${items.length ? items.map(it => itemRow(it, pack, it.id === hl)).join('') : `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-pills"></i>ยังไม่มีรายการยาในกล่องนี้${pack ? '<br><br><button class="btn primary" onclick="openItemDrawer(' + b.id + ')"><i class="fas fa-plus"></i> เพิ่มยารายการแรก</button>' : ''}</div></td></tr>`}</tbody>
+        </table></div></div>
+
+        <section class="panel section" style="margin-top:22px"><div class="panel-head"><h2>ประวัติของกล่อง</h2></div>
+            <ul class="ev-list" id="b-history"><li class="ev-row"><div class="sk" style="height:40px;width:100%"></div></li></ul></section>`;
 
     bindSort(v, 'box', () => viewBox(boxId, new URLSearchParams()));
-    $('#chk-all').onchange = e => $$('.sticker-checkbox', v).forEach(c => c.checked = e.target.checked);
-    if (edit) {
-        $('#b-add').onclick = () => openItemDrawer(b.id);
-        $('#b-stk').onclick = e => doStockTake(b, e.currentTarget);
-        if ($('#b-send')) $('#b-send').onclick = e => sendBox(b, e.currentTarget);
-    }
-    if ($('#b-clear')) $('#b-clear').onclick = e => clearBox(b, e.currentTarget);
+    if ($('#chk-all')) $('#chk-all').onchange = e => $$('.sticker-checkbox', v).forEach(c => c.checked = e.target.checked);
+    if ($('#b-add')) $('#b-add').onclick = () => openItemDrawer(b.id);
+    if ($('#b-packed')) $('#b-packed').onclick = e => markPacked(b, e.currentTarget);
+    if ($('#b-verify')) $('#b-verify').onclick = () => openVerifyDrawer(b);
+    $$('.ward-actions [data-ev]', v).forEach(x => x.onclick = () => openEventDrawer(b, x.dataset.ev));
     const menu = $('#b-print-menu');
     $('#b-print').onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
     document.addEventListener('click', () => menu.hidden = true, { once: true });
     $$('button', menu).forEach(m => m.onclick = () => {
         menu.hidden = true;
-        ({ label: () => printBoxLabel(b), sticker: () => printStickers(b), report: () => printBoxReport(b), csv: () => exportItemsCsv(itemsOf(b.id), b.name) })[m.dataset.p]();
+        ({ label: () => printBoxLabel(b), sticker: () => printStickers(b), qr: () => showBoxQr(b), report: () => printBoxReport(b), csv: () => exportItemsCsv(itemsOf(b.id), b.name) })[m.dataset.p]();
     });
     bindItemActions(v);
     if (hl) { const r = $(`tr[data-id="${hl}"]`, v); if (r) setTimeout(() => r.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50); }
+    api('box_events', { boxId: b.id }, { silent: true }).then(r => {
+        const h = $('#b-history'); if (!h) return;
+        h.innerHTML = r.events.length ? r.events.map(eventLine).join('') : '<li class="empty-state">ยังไม่มีประวัติการรับ/ตรวจเช็ค/แจ้งของกล่องนี้</li>';
+    }).catch(() => { const h = $('#b-history'); if (h) h.innerHTML = '<li class="empty-state">โหลดประวัติไม่สำเร็จ</li>'; });
 }
 function th(col, label, key, cls = '') {
     const s = UI.sort[key] || {};
@@ -575,7 +642,7 @@ function itemRow(it, edit, hl) {
     if (it.openedAt) sub.push(`แกะซอง ${thDate(it.openedAt, true)}`);
     sub.push(`อัปเดต ${thDate((it.updatedAt || '').slice(0, 10), true)}${it.verifiedBy ? ' โดย ' + esc(it.verifiedBy) : ''}`);
     return `<tr data-id="${it.id}"${hl ? ' style="outline:2px solid var(--gold);outline-offset:-2px"' : ''}>
-        <td class="chk"><input type="checkbox" class="sticker-checkbox" value="${it.id}" aria-label="เลือก ${esc(it.drugName)}"></td>
+        ${edit ? `<td class="chk"><input type="checkbox" class="sticker-checkbox" value="${it.id}" aria-label="เลือก ${esc(it.drugName)}"></td>` : ''}
         <td class="drug"><b>${esc(it.drugName)}</b><small>${sub.join(' · ')}</small></td>
         <td data-l="Lot">${esc(it.lotNumber || '-')}</td>
         <td data-l="แหล่งเก็บ"><span class="tag">${esc(it.storageLoc)}</span></td>
@@ -583,7 +650,7 @@ function itemRow(it, edit, hl) {
         <td data-l="จำนวน" class="num"><b>${it.qty ?? '-'}</b> <small class="faint">${esc(it.unit || '')}</small></td>
         <td class="acts">${edit ? `
             ${it.canOpenPkg ? `<button class="btn sm" data-a="open" title="แกะซอง (ปรับวันหมดอายุตามอายุหลังเปิด)"><i class="fas fa-scissors"></i></button>` : ''}
-            <button class="btn sm" data-a="verify" title="ตรวจแล้วถูกต้อง"><i class="fas fa-check"></i></button>
+            ${S.me.isPharmacist ? `<button class="btn sm" data-a="verify" title="เภสัชกรตรวจแล้วถูกต้อง"><i class="fas fa-check"></i></button>` : ''}
             <button class="btn sm" data-a="edit" title="แก้ไข"><i class="fas fa-pen"></i></button>
             <button class="btn sm danger" data-a="del" title="ลบ"><i class="fas fa-trash"></i></button>` : ''}</td>
     </tr>`;
@@ -623,23 +690,98 @@ async function openPackage(it, btn) {
         Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', text: r.message, confirmButtonText: 'ตกลง' });
     });
 }
-async function doStockTake(b, btn) {
-    const ok = await Swal.fire({ icon: 'question', title: 'ยืนยันการตรวจกล่อง', text: `ยืนยันว่าตรวจรายการยา จำนวน และวันหมดอายุใน ${b.name} ตรงกับของจริงแล้ว`, showCancelButton: true, confirmButtonText: 'ยืนยัน ตรวจครบแล้ว', cancelButtonText: 'ยกเลิก' });
-    if (!ok.isConfirmed) return;
-    await withBusy(btn, async () => { const r = await api('box_stock_take', { boxId: b.id }); upsertBoxes(r.boxes); toast(r.message); rerender(); refreshLogs(); });
+/* ---------- งานของหอผู้ป่วย ---------- */
+const ISSUE_CATS = ['ซีล/กล่องชำรุด', 'ยาไม่ครบตามป้าย', 'พบยาหมดอายุ', 'ป้ายกล่องชำรุด/อ่านไม่ออก', 'อื่นๆ'];
+function applyBoxResult(r, boxId) {
+    upsertBoxes(r.boxes);
+    if (r.openEvents) S.openEvents = (S.openEvents || []).filter(e => e.boxId !== boxId).concat(r.openEvents);
 }
-async function sendBox(b, btn) {
-    const { value, isConfirmed } = await Swal.fire({
-        icon: 'warning', title: 'ส่งกล่องให้เภสัชฯ ปรับแก้', input: 'textarea', inputLabel: 'บอกเภสัชกรว่าต้องแก้อะไร (ไม่บังคับ)', inputPlaceholder: 'เช่น ใช้ Adrenaline ไป 2 amp, ยาหมดอายุ 1 รายการ',
-        showCancelButton: true, confirmButtonText: 'ส่งกล่อง', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#D64535',
-    });
+function openEventDrawer(b, type) {
+    const m = EV[type];
+    const items = sortRows(itemsOf(b.id), 'drugName', true);
+    const pickItems = type === 'USE' || type === 'REQUEST';
+    let body = '';
+    if (type === 'RECEIVE') {
+        body = `<div class="hint">${b.stage === 'returning' ? `เภสัชกร ${esc(b.pharmVerifiedBy || '')} ตรวจสอบกล่องนี้แล้วเมื่อ ${thDateTime(b.pharmVerifiedAt)}` : 'กล่องนี้ยังไม่มีการส่งคืนจากห้องยา บันทึกได้ถ้ารับกล่องมาจริง'}</div>
+            <label class="check"><input type="checkbox" name="sealOk" checked> ซีลกล่องอยู่ในสภาพดี และตรวจป้ายกล่องตรงกับกล่องแล้ว</label>
+            <br><label class="field"><span>หมายเหตุ (ถ้ามี)</span><textarea class="input" name="note" rows="2"></textarea></label>`;
+    } else if (type === 'CHECK') {
+        const warn = items.filter(i => ['expired', 'exp3m'].includes(i.expStatus));
+        body = `${warn.length ? `<div class="hint" style="background:var(--st-exp3m-bg);color:#8E2A1F"><b>ยาที่ควรดูเป็นพิเศษ</b><br>${warn.map(i => `${esc(i.drugName)} — ${thDate(i.expireDate)}`).join('<br>')}</div>` : ''}
+            <fieldset class="choice"><legend>ผลการตรวจเช็ค</legend>
+                <label><input type="radio" name="result" value="ครบถ้วน" checked> ครบถ้วน ซีลปกติ ไม่มียาหมดอายุ</label>
+                ${ISSUE_CATS.slice(0, 4).map(c => `<label><input type="radio" name="result" value="${c}"> ${c}</label>`).join('')}
+            </fieldset>
+            <label class="field"><span>รายละเอียด <small>(จำเป็นเมื่อพบปัญหา)</small></span><textarea class="input" name="note" rows="2"></textarea></label>`;
+    } else if (type === 'ISSUE') {
+        body = `<label class="field"><span>หัวข้อปัญหา</span><select class="select input" name="category">${ISSUE_CATS.map(c => `<option>${c}</option>`).join('')}</select></label>
+            <label class="field"><span>รายละเอียด</span><textarea class="input" name="note" rows="3" required></textarea></label>`;
+    } else {
+        body = `<p class="muted" style="margin-top:0">${type === 'USE' ? 'ระบุจำนวนที่ใช้ไปของแต่ละยา ห้องยาจะได้รับแจ้งให้เติมคืน' : 'เลือกยาที่ต้องการให้เติมหรือเปลี่ยน (ไม่บังคับ)'}</p>
+            <ul class="pick">${items.map(i => `<li><span><b>${esc(i.drugName)}</b><small>Lot ${esc(i.lotNumber || '-')} · มี ${i.qty ?? '-'} ${esc(i.unit || '')}</small></span>
+                <span class="step"><button type="button" data-d="-1" aria-label="ลด">−</button><input type="number" min="0" max="${Math.max(i.qty || 0, 99)}" value="0" data-item="${i.id}" inputmode="numeric" aria-label="จำนวน ${esc(i.drugName)}"><button type="button" data-d="1" aria-label="เพิ่ม">+</button></span></li>`).join('')}</ul>
+            <label class="field"><span>หมายเหตุ ${type === 'REQUEST' ? '(เช่น ขอเปลี่ยน Lot ที่ใกล้หมดอายุ)' : '(ถ้ามี)'}</span><textarea class="input" name="note" rows="2"></textarea></label>`;
+    }
+    openDrawer(`<div class="drawer-head"><div><h2><i class="fas ${m.i}" style="color:${m.c}"></i> ${m.t}</h2><p>${esc(b.name)}</p></div><button class="btn icon ghost" data-close aria-label="ปิด"><i class="fas fa-xmark"></i></button></div>
+        <form class="drawer-body" id="f-ev">${body}<p class="faint" style="font-size:13px;margin:6px 0 0">บันทึกในชื่อ ${esc(S.me.displayName)} · ${thDateTime(ymd(new Date()) + ' ' + new Date().toTimeString().slice(0, 5))}</p></form>
+        <div class="drawer-foot"><button class="btn" data-close type="button">ยกเลิก</button><button class="btn primary" id="ev-save" type="button">${type === 'RECEIVE' ? 'บันทึกรับกล่อง' : type === 'CHECK' ? 'บันทึกผลตรวจ' : type === 'USE' ? 'บันทึกและแจ้งห้องยา' : 'ส่งถึงห้องยา'}</button></div>`);
+    const f = $('#f-ev');
+    $$('.step button', f).forEach(x => x.onclick = () => { const i = x.parentNode.querySelector('input'); i.value = Math.max(0, (+i.value || 0) + (+x.dataset.d)); });
+    $('#ev-save').onclick = async e => {
+        const data = { boxId: b.id, type, note: f.note ? f.note.value : '' };
+        if (type === 'CHECK') { data.category = f.result.value; if (data.category !== 'ครบถ้วน' && !data.note.trim()) return Swal.fire({ icon: 'warning', text: 'กรุณาระบุรายละเอียดปัญหาที่พบ', confirmButtonText: 'ตกลง' }); }
+        if (type === 'ISSUE') { data.category = f.category.value; if (!data.note.trim()) return Swal.fire({ icon: 'warning', text: 'กรุณาระบุรายละเอียดปัญหา', confirmButtonText: 'ตกลง' }); }
+        if (type === 'RECEIVE' && !f.sealOk.checked) { data.note = ('ซีลกล่องไม่สมบูรณ์ ' + data.note).trim(); }
+        if (pickItems) {
+            data.items = $$('input[data-item]', f).map(i => ({ itemId: +i.dataset.item, qty: +i.value || 0 })).filter(x => x.qty > 0);
+            if (type === 'USE' && !data.items.length) return Swal.fire({ icon: 'warning', text: 'กรุณาระบุจำนวนยาที่ใช้อย่างน้อย 1 รายการ', confirmButtonText: 'ตกลง' });
+        }
+        await withBusy(e.currentTarget, async () => {
+            const r = await api('box_event_add', data);
+            applyBoxResult(r, b.id); closeDrawer(); rerender(); refreshLogs();
+            Swal.fire({ icon: 'success', title: r.message, timer: 1800, showConfirmButton: false });
+        });
+    };
+}
+async function markPacked(b, btn) {
+    const { value, isConfirmed } = await Swal.fire({ icon: 'question', title: 'จัดยาเสร็จแล้ว?', text: 'ระบบจะแจ้งเภสัชกรให้มาตรวจสอบกล่องนี้', input: 'text', inputPlaceholder: 'หมายเหตุถึงเภสัชกร (ไม่บังคับ)', showCancelButton: true, confirmButtonText: 'แจ้งเภสัชกร', cancelButtonText: 'ยกเลิก' });
     if (!isConfirmed) return;
-    await withBusy(btn, async () => { const r = await api('box_status', { boxId: b.id, status: 'ส่งปรับแก้', note: value }); upsertBoxes(r.boxes); toast('ส่งกล่องแล้ว ระบบแจ้งเภสัชฯ ทาง LINE'); rerender(); refreshLogs(); });
+    await withBusy(btn, async () => { const r = await api('box_packed', { boxId: b.id, note: value }); applyBoxResult(r, b.id); toast(r.message); rerender(); });
 }
-async function clearBox(b, btn) {
-    const ok = await Swal.fire({ icon: 'question', title: 'เคลียร์สถานะกล่อง', text: `ยืนยันว่าปรับแก้ ${b.name} เรียบร้อยแล้ว`, showCancelButton: true, confirmButtonText: 'เคลียร์สถานะ', cancelButtonText: 'ยกเลิก' });
-    if (!ok.isConfirmed) return;
-    await withBusy(btn, async () => { const r = await api('box_status', { boxId: b.id, status: 'ปกติ' }); upsertBoxes(r.boxes); toast(r.message); rerender(); refreshLogs(); });
+function openVerifyDrawer(b) {
+    const opens = openEventsOf(b.id);
+    const items = sortRows(itemsOf(b.id), 'drugName', true);
+    openDrawer(`<div class="drawer-head"><div><h2><i class="fas fa-user-check" style="color:#27ae60"></i> เภสัชกรตรวจสอบกล่อง</h2><p>${esc(b.name)}</p></div><button class="btn icon ghost" data-close aria-label="ปิด"><i class="fas fa-xmark"></i></button></div>
+        <form class="drawer-body" id="f-vf">
+            ${opens.length ? `<h3 class="dh">คำขอที่จะปิด (${opens.length})</h3><ul class="ev-list compact">${opens.map(eventLine).join('')}</ul>` : ''}
+            <h3 class="dh">รายการยาในกล่อง (${items.length})</h3>
+            <ul class="vf-items">${items.map(i => `<li><span>${esc(i.drugName)}</span><span>${i.qty ?? '-'} ${esc(i.unit || '')}</span><span>${esc(i.lotNumber || '-')}</span>${expChip(i)}</li>`).join('')}</ul>
+            <label class="check"><input type="checkbox" name="confirm"> ตรวจสอบชื่อยา จำนวน Lot และวันหมดอายุตรงกับของจริงในกล่องแล้ว</label><br>
+            <label class="field"><span>บันทึกถึงหอผู้ป่วย (ถ้ามี)</span><textarea class="input" name="note" rows="2" placeholder="เช่น เติม Adrenaline 2 amp, เปลี่ยน Lot ใหม่"></textarea></label>
+            <div class="hint"><i class="fas fa-tag"></i> หลังตรวจสอบ ควรพิมพ์ป้ายกล่องใหม่ถ้ามีการเปลี่ยนยา/Lot</div>
+        </form>
+        <div class="drawer-foot"><button class="btn" data-close type="button">ยกเลิก</button><button class="btn solid-ok" id="vf-save" type="button">ยืนยันตรวจสอบ ส่งคืนหอผู้ป่วย</button></div>`);
+    $('#vf-save').onclick = async e => {
+        const f = $('#f-vf');
+        if (!f.confirm.checked) return Swal.fire({ icon: 'warning', text: 'กรุณาติ๊กยืนยันว่าตรวจสอบรายการยาครบแล้ว', confirmButtonText: 'ตกลง' });
+        await withBusy(e.currentTarget, async () => {
+            const r = await api('box_verify', { boxId: b.id, note: f.note.value });
+            applyBoxResult(r, b.id); closeDrawer(); rerender(); refreshLogs();
+            const p = await Swal.fire({ icon: 'success', title: r.message, text: 'ระบบแจ้งหอผู้ป่วยให้มารับกล่องแล้ว', showCancelButton: true, confirmButtonText: 'พิมพ์ป้ายกล่องใหม่', cancelButtonText: 'ปิด' });
+            if (p.isConfirmed) printBoxLabel(byId(S.boxes, b.id));
+        });
+    };
+}
+
+/* ---------- QR ของกล่อง ---------- */
+function boxUrl(b) { return location.origin + location.pathname + '#/box/' + b.id; }
+function qrSvg(text) {
+    if (typeof qrcode === 'undefined') return '';
+    const q = qrcode(0, 'M'); q.addData(text); q.make();
+    return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+}
+function showBoxQr(b) {
+    Swal.fire({ title: esc(b.name), html: `<div style="width:220px;margin:0 auto">${qrSvg(boxUrl(b))}</div><p class="muted" style="font-size:13px;word-break:break-all">${esc(boxUrl(b))}</p>`, confirmButtonText: 'ปิด' });
 }
 
 /* =====================================================================
@@ -677,16 +819,16 @@ function openItemDrawer(boxId, it = null) {
             <label class="field"><span>วันหมดอายุที่ระบุข้างขวด/แผง</span><input class="input" type="date" name="expireDate" value="${esc(it?.expireDate || '')}"><small id="fi-exp-hint"></small></label>
             ${it?.openedAt ? `<div class="hint"><i class="fas fa-scissors"></i> แกะซองเมื่อ ${thDate(it.openedAt)} (วันหมดอายุข้างกล่อง ${thDate(it.mfgExpDate)}) — ถ้าแก้วันหมดอายุ ข้อมูลการแกะซองจะถูกล้าง</div>` : ''}
             <label class="field"><span>เภสัชกรผู้ตรวจสอบ</span><input class="input" name="verifiedBy" value="${esc(S.me.displayName || S.me.username)}" list="verifier-list"><datalist id="verifier-list">${[...new Set(S.items.map(i => i.verifiedBy).filter(Boolean))].map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
-            ${it && S.me.isPharm ? `<label class="field"><span>ย้ายไปกล่อง</span><select class="select input" name="boxId">${S.boxes.map(x => `<option value="${x.id}"${x.id === b.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
+            ${it && S.me.isPacker ? `<label class="field"><span>ย้ายไปกล่อง</span><select class="select input" name="boxId">${S.boxes.map(x => `<option value="${x.id}"${x.id === b.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
         </form>
         <div class="drawer-foot">
             ${!it ? `<button class="btn" id="fi-save-next" type="button">บันทึกและเพิ่มต่อ</button>` : ''}
             <button class="btn primary" id="fi-save" type="button">บันทึก</button>
         </div>`);
     const ts = new TomSelect('#fi-drug', {
-        create: S.me.isPharm ? input => ({ value: 'new:' + input, text: input + ' (เพิ่มยาใหม่เข้าทะเบียน)' }) : false,
+        create: S.me.isPharmacist ? input => ({ value: 'new:' + input, text: input + ' (เพิ่มยาใหม่เข้าทะเบียน)' }) : false,
         maxOptions: 200, sortField: { field: 'text', direction: 'asc' },
-        render: { no_results: () => `<div class="no-results">ไม่พบยานี้ในทะเบียน${S.me.isPharm ? '' : ' — ติดต่อเภสัชกร'}</div>`, option_create: d => `<div class="create">เพิ่ม <b>${esc(d.input)}</b> เป็นยาใหม่</div>` },
+        render: { no_results: () => `<div class="no-results">ไม่พบยานี้ในทะเบียน${S.me.isPharmacist ? '' : ' — ให้เภสัชกรเพิ่มยาใหม่'}</div>`, option_create: d => `<div class="create">เพิ่ม <b>${esc(d.input)}</b> เป็นยาใหม่</div>` },
         onChange: v => {
             const d = byId(S.drugs, v);
             $('#fi-unit').textContent = d?.unit ? `(${d.unit})` : '';
@@ -942,7 +1084,7 @@ function viewManual(drugId) {
     const withDoc = S.drugs.filter(d => d.prep || d.admin || d.precautions);
     v.innerHTML = `
         <div class="page-head"><div><h1>คู่มือบริหารยา</h1><p>ข้อมูลการเตรียมยา การบริหารยา และข้อควรระวัง</p></div>
-            ${S.me.isPharm ? `<div class="actions"><a class="btn" href="#/settings/drugs"><i class="fas fa-pen"></i> แก้ไขคู่มือในทะเบียนยา</a></div>` : ''}</div>
+            ${S.me.isPharmacist ? `<div class="actions"><a class="btn" href="#/settings/drugs"><i class="fas fa-pen"></i> แก้ไขคู่มือในทะเบียนยา</a></div>` : ''}</div>
         <div class="panel section"><div class="panel-body"><div class="field" style="margin:0"><span>ค้นหารายชื่อยา</span><select id="m-drug" placeholder="พิมพ์ชื่อยาเพื่อค้นหา" aria-label="ค้นหารายชื่อยา"><option value=""></option>${S.drugs.filter(d => d.isActive).map(d => `<option value="${d.id}">${esc(d.name)}${d.prep || d.admin ? '' : ' (ยังไม่มีคู่มือ)'}</option>`).join('')}</select></div>
             ${withDoc.length ? `<p class="muted" style="margin:12px 0 0;font-size:14px">มีคู่มือแล้ว: ${withDoc.map(d => `<a href="#/manual/${d.id}">${esc(d.name)}</a>`).join(', ')}</p>` : ''}</div></div>
         <div id="m-doc"></div>`;
@@ -963,11 +1105,30 @@ function viewManual(drugId) {
 }
 
 /* =====================================================================
+   งานรอดำเนินการ
+   ===================================================================== */
+function viewTasks(v) {
+    const tk = myTasks();
+    const card = (b, extra = '') => `<a class="task" href="#/box/${b.id}" style="--sc:${STAGE[b.stage].c}">
+        <span class="t-head">${deptBadge(b.departmentId)} <b>${esc(b.name)}</b></span>${extra}</a>`;
+    const evs = b => openEventsOf(b.id).map(e => `<span class="t-ev"><i class="fas ${EV[e.type].i}" style="color:${EV[e.type].c}"></i> ${EV[e.type].t}${e.items?.length ? ': ' + e.items.map(x => `${esc(x.drugName)} ×${x.qty}`).join(', ') : ''}${e.note ? ` — “${esc(e.note)}”` : ''} <small class="faint">${esc(e.by || '')} · ${thDateTime(e.at)}</small></span>`).join('');
+    const sec = (title, icon, list, render, empty) => `<section class="section"><h2><i class="fas ${icon}"></i> ${title} <span class="faint">(${list.length})</span></h2>
+        ${list.length ? `<div class="task-grid">${list.map(render).join('')}</div>` : `<p class="muted">${empty}</p>`}</section>`;
+    let html = `<div class="page-head"><div><h1>งานรอดำเนินการ</h1><p>${S.me.isPacker ? 'คำขอจากหอผู้ป่วยและกล่องที่รอตรวจสอบ' : 'กล่องของ ' + esc(S.me.department || 'หน่วยงานของท่าน') + ' ที่ต้องดำเนินการ'}</p></div></div>`;
+    if (S.me.isPacker) html += sec('คำขอจากหอผู้ป่วย', 'fa-inbox', tk.requests, b => card(b, evs(b)), 'ไม่มีคำขอค้าง');
+    if (S.me.isPharmacist) html += sec('จัดยาแล้ว รอเภสัชกรตรวจสอบ', 'fa-user-check', tk.verify, b => card(b, '<span class="t-ev">กดเข้าไปเพื่อตรวจสอบรายการยาและส่งคืนหอผู้ป่วย</span>'), 'ไม่มีกล่องรอตรวจสอบ');
+    if (!S.me.isPacker) html += sec('รอห้องยาดำเนินการ', 'fa-hourglass-half', tk.waiting, b => card(b, evs(b)), 'ไม่มีคำขอค้างอยู่ที่ห้องยา');
+    html += sec('เภสัชกรตรวจสอบแล้ว รอหอผู้ป่วยรับกล่อง', 'fa-box-archive', tk.receive, b => card(b, `<span class="t-ev">ตรวจสอบโดย ${esc(b.pharmVerifiedBy || '-')} ${thDateTime(b.pharmVerifiedAt)} — สแกน QR ที่กล่องแล้วกด "รับกล่องคืน"</span>`), 'ไม่มีกล่องรอรับ');
+    html += sec(`ถึงรอบตรวจเช็คกล่อง (ทุก ${S.settings.checkInterval || 30} วัน)`, 'fa-clipboard-check', tk.check, b => card(b, `<span class="t-ev">ตรวจล่าสุด ${b.stockTakeAt ? thDateTime(b.stockTakeAt) + ' โดย ' + esc(b.stockTakeBy || '-') : 'ยังไม่เคยตรวจ'}</span>`), 'ทุกกล่องตรวจเช็คตามรอบแล้ว');
+    v.innerHTML = html;
+}
+
+/* =====================================================================
    เมนูเพิ่มเติม (มือถือ)
    ===================================================================== */
 function viewMore(v) {
     v.innerHTML = `<div class="page-head"><div><h1>เมนู</h1><p>${esc(S.me.displayName)} · ${esc(roleName(S.me.role))}</p></div></div>
-        <div class="panel"><ul class="timeline" style="padding:6px 16px">${NAV.slice(3).map(n => `<li style="grid-template-columns:28px 1fr"><i class="fas ${n.i}" style="color:var(--pine)"></i><a href="#/${n.r}" style="text-decoration:none;color:var(--ink);font-weight:500">${n.t}</a></li>`).join('')}
+        <div class="panel"><ul class="timeline" style="padding:6px 16px">${NAV.slice(4).map(n => `<li style="grid-template-columns:28px 1fr"><i class="fas ${n.i}" style="color:var(--pine)"></i><a href="#/${n.r}" style="text-decoration:none;color:var(--ink);font-weight:500">${n.t}</a></li>`).join('')}
         <li style="grid-template-columns:28px 1fr"><i class="fas fa-right-from-bracket" style="color:var(--st-exp3m)"></i><a href="javascript:void 0" id="more-logout" style="text-decoration:none;color:var(--st-exp3m);font-weight:500">ออกจากระบบ</a></li></ul></div>`;
     $('#more-logout').onclick = logout;
 }
@@ -977,7 +1138,7 @@ function viewMore(v) {
    ===================================================================== */
 function viewSettings(tab) {
     const v = $('#view');
-    const tabs = [['profile', 'ข้อมูลของฉัน', true], ['drugs', 'ทะเบียนยา', S.me.isPharm], ['boxes', 'กล่องยา', S.me.isAdmin], ['users', 'ผู้ใช้งาน', S.me.isAdmin], ['line', 'แจ้งเตือน LINE', S.me.isPharm]].filter(t => t[2]);
+    const tabs = [['profile', 'ข้อมูลของฉัน', true], ['drugs', 'ทะเบียนยา', S.me.isPharmacist], ['boxes', 'กล่องยา', S.me.isAdmin], ['users', 'ผู้ใช้งาน', S.me.isAdmin], ['line', 'แจ้งเตือน LINE', S.me.isPharmacist]].filter(t => t[2]);
     if (!tabs.some(t => t[0] === tab)) tab = 'profile';
     v.innerHTML = `<div class="page-head"><div><h1>ตั้งค่า</h1></div></div>
         <nav class="tabs">${tabs.map(t => `<a href="#/settings/${t[0]}" class="${t[0] === tab ? 'on' : ''}">${t[1]}</a>`).join('')}</nav><div id="st-body"></div>`;
@@ -988,15 +1149,47 @@ function setProfile(el) {
         <label class="field"><span>Username</span><input class="input" value="${esc(S.me.username)}" disabled></label>
         <label class="field"><span>ชื่อที่ใช้แสดง (เติมในช่องผู้ตรวจสอบอัตโนมัติ)</span><input class="input" name="displayName" value="${esc(S.me.displayName)}" required></label>
         <label class="field"><span>E-mail (ใช้รับรหัสเมื่อลืมรหัสผ่าน)</span><input class="input" type="email" name="email" value="${esc(S.me.email || '')}"></label>
-        <label class="field"><span>หน่วยงาน / สิทธิ์</span><input class="input" value="${esc(S.me.department || '-')} / ${esc(roleName(S.me.role))}" disabled></label>
+        <label class="field"><span>หน่วยงาน / ตำแหน่ง</span><input class="input" value="${esc(S.me.department || '-')} / ${esc(S.me.position || 'ยังไม่ระบุ')}" disabled><small>${esc(abilityText(S.me))} — แจ้งผู้ดูแลระบบถ้าตำแหน่งไม่ถูกต้อง</small></label>
+        <div class="line-box" id="line-box"></div>
         <h3 style="font-size:16px;margin:20px 0 10px">เปลี่ยนรหัสผ่าน <small class="faint">(เว้นว่างถ้าไม่เปลี่ยน)</small></h3>
         <div class="row"><label class="field"><span>รหัสผ่านเดิม</span><input class="input" type="password" name="oldPassword" autocomplete="current-password"></label>
         <label class="field"><span>รหัสผ่านใหม่</span><input class="input" type="password" name="newPassword" minlength="6" autocomplete="new-password"></label></div>
         <button class="btn primary" type="submit">บันทึกข้อมูล</button></form></div>`;
     $('#f-prof').onsubmit = async e => {
         e.preventDefault();
-        await withBusy(e.submitter, async () => { const r = await api('profile_save', Object.fromEntries(new FormData(e.target))); S.me = r.me; renderChrome(); toast(r.message); e.target.oldPassword.value = e.target.newPassword.value = ''; });
+        const data = Object.fromEntries(new FormData(e.target)); data.notifyLine = !!e.target.notifyLine?.checked;
+        await withBusy(e.submitter, async () => { const r = await api('profile_save', data); S.me = r.me; renderChrome(); toast(r.message); e.target.oldPassword.value = e.target.newPassword.value = ''; });
     };
+    drawLineBox();
+}
+/* ---------- เชื่อม LINE รายบุคคล ---------- */
+function drawLineBox() {
+    const el = $('#line-box'); if (!el) return;
+    const me = S.me, personal = S.settings.lineMode === 'personal';
+    el.innerHTML = `<h3><i class="fab fa-line" style="color:#06C755"></i> แจ้งเตือนทาง LINE ส่วนตัว</h3>
+        ${me.lineLinked ? `<p>เชื่อมกับ LINE <b>${esc(me.lineName || '(ไม่ทราบชื่อ)')}</b> แล้ว</p>
+            <label class="check"><input type="checkbox" name="notifyLine" ${me.notifyLine ? 'checked' : ''}> รับแจ้งเตือนงานที่เกี่ยวข้องกับฉัน</label>
+            <p><button type="button" class="btn sm danger" id="ln-unlink">ยกเลิกการเชื่อม LINE</button></p>`
+        : `<p class="muted">เชื่อม LINE เพื่อรับแจ้งเตือนเฉพาะงานของท่าน เช่น คำขอเติมยา กล่องพร้อมรับคืน และสรุปยาใกล้หมดอายุของหน่วยงาน</p>
+            <button type="button" class="btn" id="ln-link"><i class="fab fa-line" style="color:#06C755"></i> เชื่อม LINE</button>`}
+        ${!personal ? '<p class="faint" style="font-size:13px">ขณะนี้ระบบส่งแจ้งเตือนแบบรวม (Broadcast) การแจ้งเตือนรายบุคคลจะเริ่มเมื่อผู้ดูแลระบบเปิดโหมดรายบุคคล</p>' : ''}`;
+    if ($('#ln-unlink')) $('#ln-unlink').onclick = async e => withBusy(e.currentTarget, async () => { const r = await api('line_unlink'); S.me = r.me; toast(r.message); drawLineBox(); });
+    if ($('#ln-link')) $('#ln-link').onclick = async e => withBusy(e.currentTarget, async () => {
+        const r = await api('line_link_start');
+        let timer;
+        const poll = async () => {
+            try { const s = await api('line_link_status', {}, { silent: true }); if (s.me.lineLinked) { S.me = s.me; Swal.close(); toast('เชื่อม LINE สำเร็จ'); drawLineBox(); return; } } catch { /* ลองใหม่ */ }
+            timer = setTimeout(poll, 3000);
+        };
+        Swal.fire({
+            title: 'เชื่อม LINE', confirmButtonText: 'ปิด', willClose: () => clearTimeout(timer),
+            html: `<ol style="text-align:left;line-height:1.8;padding-left:22px;margin:0">
+                <li>เพิ่มเพื่อน LINE OA ของระบบ${r.addFriendUrl ? ` — <a href="${esc(r.addFriendUrl)}" target="_blank" rel="noopener">เปิด LINE</a> หรือสแกน<div style="width:150px;margin:8px 0">${qrSvg(r.addFriendUrl)}</div>` : ` (${esc(r.oaId || 'สอบถาม ID จากผู้ดูแลระบบ')})`}</li>
+                <li>พิมพ์รหัสนี้ในแชทกับ OA<div style="font-size:34px;font-weight:700;letter-spacing:.18em;color:var(--pine);user-select:all">${esc(r.code)}</div><small class="muted">ใช้ได้ภายใน ${r.expiresMin} นาที</small></li></ol>
+                <p class="muted" style="font-size:13px">หน้านี้จะอัปเดตเองเมื่อเชื่อมสำเร็จ</p>`,
+        });
+        timer = setTimeout(poll, 3000);
+    });
 }
 function setDrugs(el) {
     const used = {}; S.items.forEach(i => used[i.drugId] = (used[i.drugId] || 0) + 1);
@@ -1069,16 +1262,21 @@ async function setUsers(el) {
     el.innerHTML = '<div class="sk" style="height:240px"></div>';
     let users;
     try { users = (await api('user_list')).users; } catch { el.innerHTML = ''; return; }
-    const roles = ['Admin', 'Pharmacist', 'User'];
+    const roles = ['User', 'Admin'];
     const stName = { active: 'ใช้งาน', pending: 'รออนุมัติ', disabled: 'ระงับ' };
-    el.innerHTML = `<div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>ผู้ใช้</th><th>หน่วยงาน</th><th>สิทธิ์</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>${users.map(u => `
+    el.innerHTML = `<div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>ผู้ใช้</th><th>หน่วยงาน</th><th>ตำแหน่ง</th><th>สิทธิ์ระบบ</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>${users.map(u => `
         <tr data-uid="${u.id}"><td><b>${esc(u.displayName)}</b><br><small class="faint">${esc(u.username)} · ${esc(u.email || '-')}</small></td>
         <td><select class="select input" data-f="departmentId" style="min-width:160px"><option value="">-</option>${S.departments.map(d => `<option value="${d.id}"${u.departmentId === d.id ? ' selected' : ''}>${esc(d.short)}</option>`).join('')}</select></td>
+        <td><select class="select input" data-f="position" style="min-width:170px"><option value="">ยังไม่ระบุ</option>${POSITIONS.map(p => `<option${u.position === p ? ' selected' : ''}>${p}</option>`).join('')}</select><br><small class="faint">${esc(abilityText(u))}</small></td>
         <td><select class="select input" data-f="role">${(roles.includes(u.role) ? roles : [u.role, ...roles]).map(r => `<option value="${r}"${u.role === r ? ' selected' : ''}>${esc(roleName(r))}${r === 'Pharmacist' ? '' : ''}</option>`).join('')}</select></td>
         <td><select class="select input" data-f="status">${Object.entries(stName).map(([k, t]) => `<option value="${k}"${u.status === k ? ' selected' : ''}>${t}</option>`).join('')}</select>${u.status === 'pending' ? ' <span class="tag warn">ใหม่</span>' : ''}</td>
         <td><small>${u.lastLoginAt ? thDateTime(u.lastLoginAt) : '-'}</small></td>
         <td class="acts"><button class="btn sm primary" data-save>บันทึก</button> <button class="btn sm" data-reset title="รีเซ็ตรหัสผ่าน"><i class="fas fa-key"></i></button></td></tr>`).join('')}</tbody></table></div></div>
-        <p class="muted" style="font-size:14px;margin-top:12px"><b>ผู้ใช้งานหอผู้ป่วย</b> แก้ไขได้เฉพาะกล่องของหน่วยงานตัวเอง · <b>เภสัชกร</b> แก้ไขได้ทุกกล่องและเคลียร์สถานะ · <b>ผู้ดูแลระบบ</b> จัดการผู้ใช้ กล่อง และทะเบียนยา</p>`;
+        <div class="hint" style="margin-top:12px;line-height:1.8"><b>สิทธิ์คำนวณจากหน่วยงาน + ตำแหน่ง</b><br>
+            • <b>ผู้จัดยา</b> — สังกัดกลุ่มงานเภสัชกรรม ตำแหน่ง เจ้าพนักงานเภสัชกรรม / พนักงานประจำห้องยา / เจ้าพนักงานพัสดุ: เห็นทุกกล่อง เพิ่ม/แก้ไขยา พิมพ์ป้าย<br>
+            • <b>เภสัชกร</b> — ทำได้เหมือนผู้จัดยา + ตรวจสอบกล่องและปิดคำขอ แก้ทะเบียนยา<br>
+            • <b>หอผู้ป่วย</b> — เห็นเฉพาะกล่องของหน่วยงานตัวเอง: รับกล่อง ตรวจเช็ค บันทึกใช้ยา ขอเติม/เปลี่ยน แจ้งปัญหา<br>
+            • <b>ผู้ดูแลระบบ</b> — ทำได้ทุกอย่าง รวมถึงจัดการผู้ใช้และกล่อง</div>`;
     $$('tr[data-uid]', el).forEach(tr => {
         const u = users.find(x => x.id === +tr.dataset.uid);
         $('[data-save]', tr).onclick = e => withBusy(e.currentTarget, async () => {
@@ -1211,6 +1409,11 @@ function printBoxLabel(b) {
     $$('.lbl-box-exp').forEach(el => el.innerText = formattedBoxExp);
     const formattedDate = new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
     $$('.lbl-print-date').forEach(span => span.innerText = formattedDate);
+    // QR ประจำกล่อง → เปิดหน้ากล่องนี้ (ต้องเข้าสู่ระบบก่อน)
+    const svg = qrSvg(boxUrl(b));
+    $$('.lbl-qr-img').forEach(el => el.innerHTML = svg);
+    $$('.lbl-qr-name').forEach(el => el.innerText = b.name);
+    $$('.label-qr').forEach(el => el.classList.toggle('too-small', !svg));
     runPrint('print-label-mode', `@media print { @page { size: A4 landscape; margin: 0; } body { padding: 5mm; } }`);
 }
 
