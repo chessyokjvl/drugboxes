@@ -1138,7 +1138,7 @@ function viewMore(v) {
    ===================================================================== */
 function viewSettings(tab) {
     const v = $('#view');
-    const tabs = [['profile', 'ข้อมูลของฉัน', true], ['drugs', 'ทะเบียนยา', S.me.isPharmacist], ['boxes', 'กล่องยา', S.me.isAdmin], ['users', 'ผู้ใช้งาน', S.me.isAdmin], ['line', 'แจ้งเตือน LINE', S.me.isPharmacist]].filter(t => t[2]);
+    const tabs = [['profile', 'ข้อมูลของฉัน', true], ['drugs', 'ทะเบียนยา', S.me.isPharmacist], ['boxes', 'กล่องยา', S.me.isAdmin], ['users', 'ผู้ใช้งาน', S.me.isAdmin], ['line', 'แจ้งเตือน', S.me.isPharmacist]].filter(t => t[2]);
     if (!tabs.some(t => t[0] === tab)) tab = 'profile';
     v.innerHTML = `<div class="page-head"><div><h1>ตั้งค่า</h1></div></div>
         <nav class="tabs">${tabs.map(t => `<a href="#/settings/${t[0]}" class="${t[0] === tab ? 'on' : ''}">${t[1]}</a>`).join('')}</nav><div id="st-body"></div>`;
@@ -1264,7 +1264,8 @@ async function setUsers(el) {
     try { users = (await api('user_list')).users; } catch { el.innerHTML = ''; return; }
     const roles = ['User', 'Admin'];
     const stName = { active: 'ใช้งาน', pending: 'รออนุมัติ', disabled: 'ระงับ' };
-    el.innerHTML = `<div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>ผู้ใช้</th><th>หน่วยงาน</th><th>ตำแหน่ง</th><th>สิทธิ์ระบบ</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>${users.map(u => `
+    el.innerHTML = `<div class="toolbar"><span class="muted">${users.length} บัญชี</span><span class="grow"></span><button class="btn primary" id="u-new"><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้</button></div>
+        <div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>ผู้ใช้</th><th>หน่วยงาน</th><th>ตำแหน่ง</th><th>สิทธิ์ระบบ</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead><tbody>${users.map(u => `
         <tr data-uid="${u.id}"><td><b>${esc(u.displayName)}</b><br><small class="faint">${esc(u.username)} · ${esc(u.email || '-')}</small></td>
         <td><select class="select input" data-f="departmentId" style="min-width:160px"><option value="">-</option>${S.departments.map(d => `<option value="${d.id}"${u.departmentId === d.id ? ' selected' : ''}>${esc(d.short)}</option>`).join('')}</select></td>
         <td><select class="select input" data-f="position" style="min-width:170px"><option value="">ยังไม่ระบุ</option>${POSITIONS.map(p => `<option${u.position === p ? ' selected' : ''}>${p}</option>`).join('')}</select><br><small class="faint">${esc(abilityText(u))}</small></td>
@@ -1277,6 +1278,7 @@ async function setUsers(el) {
             • <b>เภสัชกร</b> — ทำได้เหมือนผู้จัดยา + ตรวจสอบกล่องและปิดคำขอ แก้ทะเบียนยา<br>
             • <b>หอผู้ป่วย</b> — เห็นเฉพาะกล่องของหน่วยงานตัวเอง: รับกล่อง ตรวจเช็ค บันทึกใช้ยา ขอเติม/เปลี่ยน แจ้งปัญหา<br>
             • <b>ผู้ดูแลระบบ</b> — ทำได้ทุกอย่าง รวมถึงจัดการผู้ใช้และกล่อง</div>`;
+    $('#u-new').onclick = () => userCreateDrawer(() => setUsers(el));
     $$('tr[data-uid]', el).forEach(tr => {
         const u = users.find(x => x.id === +tr.dataset.uid);
         $('[data-save]', tr).onclick = e => withBusy(e.currentTarget, async () => {
@@ -1291,13 +1293,88 @@ async function setUsers(el) {
         };
     });
 }
+/* ---------- เพิ่มผู้ใช้โดยผู้ดูแลระบบ ---------- */
+function userCreateDrawer(done) {
+    const deptOpts = S.departments.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
+    openDrawer(`<div class="drawer-head"><div><h2><i class="fas fa-user-plus" style="color:var(--pine)"></i> เพิ่มผู้ใช้</h2><p>บัญชีใช้งานได้ทันที ไม่ต้องรออนุมัติ</p></div><button class="btn icon ghost" data-close aria-label="ปิด"><i class="fas fa-xmark"></i></button></div>
+        <form class="drawer-body" id="f-user" autocomplete="off">
+            <label class="field"><span>หน่วยงาน</span><select class="select input" name="departmentId" required><option value="">เลือกหน่วยงาน</option>${deptOpts}</select></label>
+            <div class="row">
+                <label class="field"><span>Username <small>a-z 0-9 . _ -</small></span><input class="input" name="username" required pattern="[A-Za-z0-9._\-]{3,40}" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><span>ตำแหน่ง</span><select class="select input" name="position"><option value="">ยังไม่ระบุ</option>${POSITIONS.map(p => `<option>${p}</option>`).join('')}</select></label>
+            </div>
+            <label class="field"><span>ชื่อที่แสดง</span><input class="input" name="displayName" required placeholder="เช่น นางสาวสมใจ ใจดี หรือ พยาบาล ER (บัญชีกลาง)"></label>
+            <label class="field"><span>รหัสผ่าน <small>เว้นว่าง = ให้ระบบสุ่มให้ 8 ตัว</small></span><input class="input" name="password" minlength="6" autocomplete="new-password"></label>
+            <label class="field"><span>E-mail <small>(ไม่บังคับ ใช้ตอนลืมรหัสผ่าน)</small></span><input class="input" type="email" name="email"></label>
+            <label class="field"><span>สิทธิ์ระบบ</span><select class="select input" name="role"><option value="User">ผู้ใช้งานทั่วไป (สิทธิ์ตามหน่วยงาน + ตำแหน่ง)</option><option value="Admin">ผู้ดูแลระบบ</option></select></label>
+            <div class="hint" id="u-ability"></div>
+        </form>
+        <div class="drawer-foot"><button class="btn" id="u-save-next" type="button">บันทึกและเพิ่มต่อ</button><button class="btn primary" id="u-save" type="button">บันทึก</button></div>`);
+    const f = $('#f-user');
+    const preview = () => {
+        const d = byId(S.departments, f.departmentId.value);
+        const fake = { isAdmin: f.role.value === 'Admin', isPharmacist: f.position.value === 'เภสัชกร',
+            isPacker: f.position.value === 'เภสัชกร' || (!!d?.isPharmacy && ['เจ้าพนักงานเภสัชกรรม', 'พนักงานประจำห้องยา', 'เจ้าพนักงานพัสดุ'].includes(f.position.value)) };
+        $('#u-ability').innerHTML = `<b>สิทธิ์ที่จะได้:</b> ${esc(abilityText(fake))}${d && !fake.isPacker && !fake.isAdmin ? ` — เห็นเฉพาะกล่องของ ${esc(d.name)}` : ''}`;
+    };
+    ['departmentId', 'position', 'role'].forEach(n => f[n].onchange = preview); preview();
+    setTimeout(() => f.departmentId.focus(), 60);
+    const save = async (next, btn) => {
+        if (!f.reportValidity()) return;
+        const keepDept = f.departmentId.value, keepPos = f.position.value;
+        await withBusy(btn, async () => {
+            const r = await api('user_create', Object.fromEntries(new FormData(f)));
+            await Swal.fire({ icon: 'success', title: r.message, html: `<p>แจ้งผู้ใช้ให้เข้าสู่ระบบด้วย</p>
+                <table style="margin:0 auto;font-size:17px;text-align:left"><tr><td>Username:&nbsp;</td><td><b style="user-select:all">${esc(r.username)}</b></td></tr>
+                <tr><td>Password:&nbsp;</td><td><b style="user-select:all;letter-spacing:.06em">${esc(r.password)}</b></td></tr></table>
+                <p class="muted" style="font-size:13px">${r.generated ? 'รหัสนี้ระบบสุ่มให้และจะแสดงครั้งเดียว ' : ''}แนะนำให้ผู้ใช้เปลี่ยนรหัสในหน้า "ข้อมูลของฉัน"</p>`, confirmButtonText: next ? 'เพิ่มคนต่อไป' : 'ปิด' });
+            if (next) { f.reset(); f.departmentId.value = keepDept; f.position.value = keepPos; preview(); f.username.focus(); }
+            else { closeDrawer(); done && done(); }
+        });
+    };
+    $('#u-save').onclick = e => save(false, e.currentTarget);
+    $('#u-save-next').onclick = e => save(true, e.currentTarget);
+}
+
+/* ---------- แจ้งเตือน: Telegram ---------- */
+async function drawTelegram(el) {
+    el.innerHTML = '<div class="sk" style="height:120px"></div>';
+    let st;
+    try { st = await api('telegram_status', {}, { silent: true }); } catch (e) { el.innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
+    const admin = S.me.isAdmin;
+    el.innerHTML = `<h3><i class="fab fa-telegram" style="color:#229ED9"></i> Telegram (ส่งเข้ากลุ่ม)</h3>
+        ${!st.ready ? `<p class="muted">ยังไม่ได้ตั้งค่าบอท — ใส่ <code>bot_token</code> ในไฟล์ drugboxes_config.php บน Plesk ก่อน (ดูขั้นตอนใน README)</p>`
+        : st.botError ? `<p style="color:var(--st-exp3m)">ติดต่อบอทไม่ได้: ${esc(st.botError)} — ตรวจ bot_token อีกครั้ง</p>`
+        : `<p>บอท: <b>${esc(st.bot)}</b> · กลุ่มที่ส่ง: ${st.chatId ? `<b>${esc(st.chatTitle || st.chatId)}</b>` : '<span style="color:var(--st-exp3m)">ยังไม่ได้เลือกกลุ่ม</span>'}</p>
+           ${admin ? `<ol class="muted" style="font-size:14px;line-height:1.8;padding-left:20px;margin:6px 0 12px">
+              <li>สร้างกลุ่มใน Telegram แล้วเพิ่มสมาชิกที่ต้องการให้รับแจ้งเตือน</li>
+              <li>เพิ่ม <b>${esc(st.bot)}</b> เข้ากลุ่ม (Add member › ค้นชื่อบอท)</li>
+              <li>พิมพ์ข้อความอะไรก็ได้ในกลุ่ม 1 ครั้ง แล้วกด "ค้นหากลุ่ม" ด้านล่าง</li></ol>
+           <div class="toolbar"><button class="btn" id="tg-find"><i class="fas fa-magnifying-glass"></i> ค้นหากลุ่ม</button>
+              ${st.chatId ? `<button class="btn" id="tg-test"><i class="fab fa-telegram"></i> ส่งข้อความทดสอบ</button><button class="btn danger" id="tg-off">หยุดส่ง Telegram</button>` : ''}</div>
+           <div id="tg-chats"></div>` : ''}`}`;
+    if ($('#tg-find')) $('#tg-find').onclick = e => withBusy(e.currentTarget, async () => {
+        const r = await api('telegram_find_chats');
+        $('#tg-chats').innerHTML = r.chats.length ? `<ul class="pick">${r.chats.map(c => `<li><span><b>${esc(c.title)}</b><small>${esc(c.type)} · ${esc(c.id)}</small></span><button class="btn sm primary" data-chat="${esc(c.id)}" data-title="${esc(c.title)}">${c.id === st.chatId ? 'ใช้อยู่' : 'ใช้กลุ่มนี้'}</button></li>`).join('')}</ul>`
+            : '<div class="hint">ยังไม่พบกลุ่ม — ตรวจว่าเพิ่มบอทเข้ากลุ่มแล้ว และพิมพ์ข้อความในกลุ่มหลังเพิ่มบอท แล้วกดค้นหาอีกครั้ง</div>';
+        $$('[data-chat]', $('#tg-chats')).forEach(b => b.onclick = ev => withBusy(ev.currentTarget, async () => {
+            const x = await api('telegram_set_chat', { chatId: b.dataset.chat, title: b.dataset.title }); toast(x.message); drawTelegram(el);
+        }));
+    });
+    if ($('#tg-test')) $('#tg-test').onclick = e => withBusy(e.currentTarget, async () => { const r = await api('telegram_test'); toast(r.message, r.message.includes('สำเร็จ') ? 'success' : 'error'); });
+    if ($('#tg-off')) $('#tg-off').onclick = e => withBusy(e.currentTarget, async () => { const r = await api('telegram_set_chat', { chatId: '' }); toast(r.message); drawTelegram(el); });
+}
+
 function setLine(el) {
-    el.innerHTML = `<div class="panel" style="max-width:720px"><div class="panel-body">
-        <p>ระบบส่งแจ้งเตือนทาง LINE Official Account เมื่อ</p>
-        <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9"><li>มีผู้ลงทะเบียนใหม่ (รออนุมัติ)</li><li>หอผู้ป่วยส่งกล่องให้เภสัชฯ ปรับแก้ และเมื่อเภสัชฯ เคลียร์สถานะ</li><li>มีการยืนยันตรวจกล่อง (Stock Take)</li><li>สรุปยาหมดอายุ/ใกล้หมดอายุประจำวัน (ตั้งเวลาใน Plesk)</li></ul>
+    el.innerHTML = `<div class="panel" style="max-width:760px"><div class="panel-body">
+        <p style="margin-top:0">ระบบส่งแจ้งเตือนเมื่อ</p>
+        <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9"><li>หอผู้ป่วยบันทึกใช้ยา / ขอเติม-เปลี่ยนยา / แจ้งปัญหา / ตรวจเช็คแล้วพบปัญหา</li><li>ผู้จัดยาจัดยาเสร็จ และเภสัชกรตรวจสอบกล่องเสร็จ (แจ้งหอผู้ป่วยมารับกล่อง)</li><li>มีผู้ลงทะเบียนใหม่รออนุมัติ</li><li>สรุปยาหมดอายุ/ใกล้หมดอายุประจำวัน (ตั้งเวลาใน Plesk)</li></ul>
+        <div class="line-box" id="tg-box"></div>
+        <div class="line-box"><h3><i class="fab fa-line" style="color:#06C755"></i> LINE Official Account</h3>
         <div class="toolbar"><button class="btn" id="ln-preview"><i class="fas fa-eye"></i> ดูตัวอย่างข้อความสรุปวันนี้</button>
-        ${S.me.isAdmin ? `<button class="btn" id="ln-test"><i class="fab fa-line"></i> ส่งข้อความทดสอบ</button><button class="btn" id="ln-send"><i class="fas fa-paper-plane"></i> ส่งสรุปวันนี้ทันที</button>` : ''}</div>
+        ${S.me.isAdmin ? `<button class="btn" id="ln-test"><i class="fab fa-line"></i> ทดสอบ LINE</button><button class="btn" id="ln-send"><i class="fas fa-paper-plane"></i> ส่งสรุปวันนี้ทันที (ทุกช่องทาง)</button>` : ''}</div></div>
         <pre id="ln-out" style="white-space:pre-wrap;background:var(--line-2);padding:14px;border-radius:8px;font:14px/1.6 var(--font);display:none"></pre></div></div>`;
+    drawTelegram($('#tg-box'));
     const show = t => { const o = $('#ln-out'); o.style.display = 'block'; o.textContent = t; };
     $('#ln-preview').onclick = e => withBusy(e.currentTarget, async () => show((await api('line_preview_summary')).message));
     if ($('#ln-test')) $('#ln-test').onclick = e => withBusy(e.currentTarget, async () => { const r = await api('line_test'); show(r.message); });
